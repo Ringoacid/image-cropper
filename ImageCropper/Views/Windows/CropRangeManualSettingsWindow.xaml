@@ -1,0 +1,180 @@
+﻿<Window
+    x:Class="ImageCropper.Views.Windows.CropRangeManualSettingsWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:ImageCropper.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:ImageCropper.Views.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:usr="clr-namespace:ImageCropper.Views.UserControls"
+    xmlns:vm="clr-namespace:ImageCropper.ViewModels.Windows"
+    Title="CropRangeManualSettingsWindow"
+    Width="400"
+    Height="300"
+    d:DataContext="{d:DesignInstance Type=local:CropRangeManualSettingsWindow}"
+    mc:Ignorable="d">
+
+    <Window.Resources>
+        <converters:EnumToBooleanConverter x:Key="EnumToBoolConverter" />
+
+        <Style TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style TargetType="usr:NumberBox">
+            <Setter Property="Width" Value="100" />
+            <Setter Property="IsIntegerOnly" Value="False" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Grid.Row="0"
+            FontSize="24"
+            FontWeight="Bold"
+            Text="手動設定による切り取り範囲の指定" />
+        <Border
+            Grid.Row="1"
+            Margin="0,5,0,5"
+            Padding="5"
+            Background="#88aaaaaa">
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="画像の解像度：" />
+                    <TextBlock Text="{Binding ViewModel.ImageInformation}" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="元の切り取り範囲：" />
+                    <TextBlock Text="{Binding ViewModel.OriginalCropRange}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="2">
+            <StackPanel Margin="0,5" Orientation="Horizontal">
+                <TextBlock Text="単位：" />
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <RadioButton VerticalAlignment="Center" Content="ピクセル(px)">
+                        <RadioButton.IsChecked>
+                            <Binding
+                                Converter="{StaticResource EnumToBoolConverter}"
+                                ConverterParameter="{x:Static local:RangeUnit.Pixel}"
+                                Mode="TwoWay"
+                                Path="ViewModel.Unit" />
+                        </RadioButton.IsChecked>
+                    </RadioButton>
+
+                    <RadioButton
+                        Margin="10,0"
+                        VerticalContentAlignment="Center"
+                        Content="パーセント(%)">
+                        <RadioButton.IsChecked>
+                            <Binding
+                                Converter="{StaticResource EnumToBoolConverter}"
+                                ConverterParameter="{x:Static local:RangeUnit.Percent}"
+                                Mode="TwoWay"
+                                Path="ViewModel.Unit" />
+                        </RadioButton.IsChecked>
+                    </RadioButton>
+                </StackPanel>
+            </StackPanel>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Margin" Value="0,0,20,0" />
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
+
+                    <Style TargetType="usr:NumberBox">
+                        <Setter Property="Width" Value="100" />
+                        <Setter Property="IsIntegerOnly" Value="False" />
+                    </Style>
+                </Grid.Resources>
+
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Text="左上の座標(X,Y)" />
+                <usr:NumberBox
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Max="{Binding ViewModel.MaxLeftTopX, Mode=OneWay}"
+                    Value="{Binding ViewModel.LeftTopX}" />
+                <usr:NumberBox
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    Max="{Binding ViewModel.MaxLeftTopY, Mode=OneWay}"
+                    Value="{Binding ViewModel.LeftTopY}" />
+
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Text="右下の座標(X,Y)" />
+                <usr:NumberBox
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Min="{Binding ViewModel.MinRightBottomX, Mode=OneWay}"
+                    Value="{Binding ViewModel.RightBottomX}" />
+                <usr:NumberBox
+                    Grid.Row="1"
+                    Grid.Column="2"
+                    Min="{Binding ViewModel.MinRightBottomY, Mode=OneWay}"
+                    Value="{Binding ViewModel.RightBottomY}" />
+
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    Text="サイズ(幅,高さ)" />
+                <usr:NumberBox
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Min="0"
+                    Value="{Binding ViewModel.Width}" />
+                <usr:NumberBox
+                    Grid.Row="2"
+                    Grid.Column="2"
+                    Min="0"
+                    Value="{Binding ViewModel.Height}" />
+            </Grid>
+        </StackPanel>
+
+        <StackPanel
+            Grid.Row="3"
+            Margin="0,10"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <Button
+                Margin="20,0"
+                Padding="10"
+                Background="Aqua"
+                Command="{Binding ViewModel.OkCommand}"
+                Content="OK" />
+            <Button
+                Padding="10"
+                Command="{Binding ViewModel.CancelCommand}"
+                Content="キャンセル" />
+        </StackPanel>
+    </Grid>
+
+</Window>

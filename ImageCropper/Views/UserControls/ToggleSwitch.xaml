@@ -1,0 +1,106 @@
+﻿<UserControl
+    x:Class="ImageCropper.Views.UserControls.ToggleSwitch"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:ImageCropper.Views.UserControls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <UserControl.LayoutTransform>
+        <ScaleTransform ScaleX="0.5" ScaleY="0.5" />
+    </UserControl.LayoutTransform>
+
+    <UserControl.Resources>
+        <!--  ToggleCircle を 5→80 と 80→5 に移動 + 背景シェイプ色 Gray↔Cyan  -->
+        <Storyboard x:Key="ToOn">
+            <ThicknessAnimation
+                FillBehavior="HoldEnd"
+                Storyboard.TargetName="ToggleCircle"
+                Storyboard.TargetProperty="Margin"
+                To="60,0,0,0"
+                Duration="0:0:0.2" />
+            <ColorAnimation
+                Storyboard.TargetName="LeftEllipse"
+                Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
+                To="Cyan"
+                Duration="0:0:0.2" />
+            <ColorAnimation
+                Storyboard.TargetName="MidRect"
+                Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
+                To="Cyan"
+                Duration="0:0:0.2" />
+            <ColorAnimation
+                Storyboard.TargetName="RightEllipse"
+                Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
+                To="Cyan"
+                Duration="0:0:0.2" />
+        </Storyboard>
+        <Storyboard x:Key="ToOff">
+            <ThicknessAnimation
+                FillBehavior="HoldEnd"
+                Storyboard.TargetName="ToggleCircle"
+                Storyboard.TargetProperty="Margin"
+                To="5,0,0,0"
+                Duration="0:0:0.2" />
+            <ColorAnimation
+                Storyboard.TargetName="LeftEllipse"
+                Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
+                To="Gray"
+                Duration="0:0:0.2" />
+            <ColorAnimation
+                Storyboard.TargetName="MidRect"
+                Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
+                To="Gray"
+                Duration="0:0:0.2" />
+            <ColorAnimation
+                Storyboard.TargetName="RightEllipse"
+                Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)"
+                To="Gray"
+                Duration="0:0:0.2" />
+        </Storyboard>
+    </UserControl.Resources>
+    <Grid
+        MouseLeave="Grid_MouseLeave"
+        MouseLeftButtonDown="Grid_MouseLeftButtonDown"
+        MouseLeftButtonUp="Grid_MouseLeftButtonUp">
+        <Grid>
+            <Ellipse
+                x:Name="LeftEllipse"
+                Width="50"
+                Height="50"
+                HorizontalAlignment="Left">
+                <Ellipse.Fill>
+                    <SolidColorBrush Color="Gray" />
+                </Ellipse.Fill>
+            </Ellipse>
+            <Rectangle
+                x:Name="MidRect"
+                Width="55"
+                Height="50"
+                Margin="25,0,0,0"
+                HorizontalAlignment="Left">
+                <Rectangle.Fill>
+                    <SolidColorBrush Color="Gray" />
+                </Rectangle.Fill>
+            </Rectangle>
+            <Ellipse
+                x:Name="RightEllipse"
+                Width="50"
+                Height="50"
+                Margin="55,0,0,0"
+                HorizontalAlignment="Left">
+                <Ellipse.Fill>
+                    <SolidColorBrush Color="Gray" />
+                </Ellipse.Fill>
+            </Ellipse>
+        </Grid>
+
+        <Ellipse
+            x:Name="ToggleCircle"
+            Width="40"
+            Height="40"
+            Margin="5,0,0,0"
+            HorizontalAlignment="Left"
+            Fill="Black" />
+    </Grid>
+</UserControl>

@@ -12,9 +12,10 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Windows.Shapes;
-using Velopack;
-using Velopack.Sources;
 using Path = System.IO.Path;
 using Point = System.Windows.Point;
 using Window = System.Windows.Window;
@@ -1168,6 +1169,12 @@ public partial class MainViewModel : ObservableObject
 
     #region ヘルプメニュー
     private const string GitHubRepoUrl = "https://github.com/Ringoacid/image-cropper";
+    private const string GitHubApiLatestReleaseUrl = "https://api.github.com/repos/Ringoacid/image-cropper/releases/latest";
+
+    private static readonly HttpClient _httpClient = new()
+    {
+        DefaultRequestHeaders = { { "User-Agent", "ImageCropper" } }
+    };
 
     [RelayCommand]
     private void OpenGitHubRepository()
@@ -1180,31 +1187,37 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            var mgr = new UpdateManager(new GithubSource(GitHubRepoUrl, null, false));
+            var response = await _httpClient.GetFromJsonAsync<JsonElement>(GitHubApiLatestReleaseUrl);
 
-            if (!mgr.IsInstalled)
+            var tagName = response.GetProperty("tag_name").GetString() ?? string.Empty;
+            var releasePageUrl = response.GetProperty("html_url").GetString() ?? GitHubRepoUrl;
+
+            // "v1.2.3" -> "1.2.3"
+            var versionString = tagName.TrimStart('v');
+
+            if (!Version.TryParse(versionString, out var latestVersion))
             {
-                ShowInformationMessageBox("更新の確認", "開発モードで実行中のため、更新の確認はできません。");
+                ShowErrorMessageBox("更新エラー", $"バージョン情報のパースに失敗しました: {tagName}");
                 return;
             }
 
-            var newVersion = await mgr.CheckForUpdatesAsync();
-            if (newVersion == null)
+            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0);
+
+            if (latestVersion <= currentVersion)
             {
                 ShowInformationMessageBox("更新の確認", "最新バージョンです。更新はありません。");
                 return;
             }
 
             var result = MessageBox.Show(
-                $"新しいバージョン {newVersion.TargetFullRelease.Version} が利用可能です。\n今すぐアップデートしますか？",
+                $"新しいバージョン {latestVersion} が利用可能です。\nリリースページを開きますか？",
                 "更新の確認",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
             if (result == MessageBoxResult.Yes)
             {
-                await mgr.DownloadUpdatesAsync(newVersion);
-                mgr.ApplyUpdatesAndRestart(newVersion);
+                Process.Start(new ProcessStartInfo(releasePageUrl) { UseShellExecute = true });
             }
         }
         catch (Exception ex)

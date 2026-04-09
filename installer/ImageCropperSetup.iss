@@ -2,7 +2,7 @@
 ; Inno Setup 6.x 以降が必要です
 
 #define MyAppName "ImageCropper"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0.0"
 #define MyAppPublisher "ImageCropper"
 #define MyAppExeName "ImageCropper.exe"
 #define MyAppURL ""

@@ -917,7 +917,7 @@ public partial class EditableImage : UserControl
         }
         if (current.Y < leftTop.Y - minSize)
         {
-            (leftTop.Y, rightBottom.Y) = (rightBottom.Y - delta, leftTop.Y + delta);
+            (leftTop.Y, rightBottom.Y) = (rightBottom.Y - delta, leftTop.Y - delta);
             selectedResizeHandleIndex = 2;
         }
 

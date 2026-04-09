@@ -353,6 +353,7 @@ public partial class EditableImage : UserControl
     private readonly List<Ellipse> resizeHandles = new(8);
     private int selectedResizeHandleIndex = -1;
     private bool IsResizing = false;
+    private double resizeStartAspectRatio = 1.0; // リサイズ開始時の縦横比（幅÷高さ）
 
     private bool isMakingRectangle = false;
     private Point? makingStartPoint = null;
@@ -746,6 +747,14 @@ public partial class EditableImage : UserControl
             Mouse.OverrideCursor = Cursors.Cross;
             IsResizing = true;
             selectedResizeHandleIndex = (int)ellipse.Tag;
+            // リサイズ開始時のアスペクト比を記録
+            if (SelectedRectangle != null)
+            {
+                (Point lt, Point rb) = GetRectangleDisplayCoordinates(SelectedRectangle);
+                double w = rb.X - lt.X;
+                double h = rb.Y - lt.Y;
+                resizeStartAspectRatio = (h > 0) ? w / h : 1.0;
+            }
             // リサイズ開始時の基準位置を保存
             lastMousePosition_Left = e.GetPosition(image);
             e.Handled = true;
@@ -773,6 +782,12 @@ public partial class EditableImage : UserControl
 
         // リサイズハンドルの位置に応じて矩形を変形
         (leftTop, rightBottom) = CalculateResizedBounds(leftTop, rightBottom, currentPosition);
+
+        // Shiftキーが押されている場合はアスペクト比を固定
+        if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+        {
+            (leftTop, rightBottom) = ApplyAspectRatioConstraint(leftTop, rightBottom);
+        }
 
         // 画像範囲内に制限
         leftTop.X = Math.Max(0, leftTop.X);
@@ -820,6 +835,48 @@ public partial class EditableImage : UserControl
             case 7: // 左
                 (leftTop, rightBottom) = ResizeLeft(leftTop, rightBottom, currentPosition, minSize, delta);
                 break;
+        }
+
+        return (leftTop, rightBottom);
+    }
+
+    /// <summary>
+    /// アスペクト比を維持するように矩形の境界を調整する
+    /// </summary>
+    private (Point leftTop, Point rightBottom) ApplyAspectRatioConstraint(Point leftTop, Point rightBottom)
+    {
+        if (resizeStartAspectRatio <= 0) return (leftTop, rightBottom);
+
+        double newWidth = rightBottom.X - leftTop.X;
+        double newHeight = rightBottom.Y - leftTop.Y;
+
+        switch (selectedResizeHandleIndex)
+        {
+            case 0: // 左上 - rightBottom が固定、幅を基準に leftTop.Y を調整
+            {
+                double targetHeight = newWidth / resizeStartAspectRatio;
+                leftTop.Y = rightBottom.Y - targetHeight;
+                break;
+            }
+            case 2: // 右上 - leftTop.X と rightBottom.Y が固定、幅を基準に leftTop.Y を調整
+            {
+                double targetHeight = newWidth / resizeStartAspectRatio;
+                leftTop.Y = rightBottom.Y - targetHeight;
+                break;
+            }
+            case 4: // 右下 - leftTop が固定、幅を基準に rightBottom.Y を調整
+            {
+                double targetHeight = newWidth / resizeStartAspectRatio;
+                rightBottom.Y = leftTop.Y + targetHeight;
+                break;
+            }
+            case 6: // 左下 - rightBottom.X と leftTop.Y が固定、幅を基準に rightBottom.Y を調整
+            {
+                double targetHeight = newWidth / resizeStartAspectRatio;
+                rightBottom.Y = leftTop.Y + targetHeight;
+                break;
+            }
+            // 辺ハンドル（上・下・左・右）はアスペクト比固定を行わない
         }
 
         return (leftTop, rightBottom);

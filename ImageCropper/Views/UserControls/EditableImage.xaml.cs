@@ -1,5 +1,4 @@
 ﻿using ImageCropper.Models;
-using ImageCropper.ViewModels.Windows;
 using ImageCropper.Views.Windows;
 using System.Windows;
 using System.Windows.Controls;

@@ -244,3 +244,6 @@ The logic lives in `EditableImage.xaml.cs` (mouse event handlers). Key methods h
 |---|---|
 | 1.1.0.0 | Replaced Velopack with GitHub Releases API for updates; added Shift+drag aspect-ratio lock on corner handles |
 | 1.0.0.0 | Initial release |
+
+## Precautions when having a conversation
+* ユーザーとの受け答えは日本語で行ってください。

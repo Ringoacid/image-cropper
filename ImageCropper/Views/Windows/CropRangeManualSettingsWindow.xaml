@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:ImageCropper.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:ImageCropper.Models"
     xmlns:usr="clr-namespace:ImageCropper.Views.UserControls"
     xmlns:vm="clr-namespace:ImageCropper.ViewModels.Windows"
     Title="CropRangeManualSettingsWindow"
@@ -66,7 +67,7 @@
                         <RadioButton.IsChecked>
                             <Binding
                                 Converter="{StaticResource EnumToBoolConverter}"
-                                ConverterParameter="{x:Static local:RangeUnit.Pixel}"
+                                ConverterParameter="{x:Static models:RangeUnit.Pixel}"
                                 Mode="TwoWay"
                                 Path="ViewModel.Unit" />
                         </RadioButton.IsChecked>
@@ -79,7 +80,7 @@
                         <RadioButton.IsChecked>
                             <Binding
                                 Converter="{StaticResource EnumToBoolConverter}"
-                                ConverterParameter="{x:Static local:RangeUnit.Percent}"
+                                ConverterParameter="{x:Static models:RangeUnit.Percent}"
                                 Mode="TwoWay"
                                 Path="ViewModel.Unit" />
                         </RadioButton.IsChecked>

@@ -6,12 +6,6 @@ using System.Windows.Shapes;
 
 namespace ImageCropper.Views.Windows;
 
-public enum RangeUnit
-{
-    Pixel,
-    Percent
-}
-
 /// <summary>
 /// CropRangeManualSettingsWindow.xaml の相互作用ロジック
 /// </summary>

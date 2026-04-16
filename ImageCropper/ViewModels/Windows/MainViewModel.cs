@@ -426,12 +426,12 @@ public partial class MainViewModel : ObservableObject
         // 単体または複数のファイル/フォルダがドロップされたときの処理
         try
         {
-            if (!e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 return;
             }
 
-            var droppedItems = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
+            var droppedItems = e.Data.GetData(DataFormats.FileDrop) as string[];
             if (droppedItems == null || droppedItems.Length == 0)
             {
                 return;
@@ -442,17 +442,17 @@ public partial class MainViewModel : ObservableObject
             foreach (var item in droppedItems)
             {
                 // ファイルかフォルダかを判定
-                if (System.IO.File.Exists(item))
+                if (File.Exists(item))
                 {
                     // ファイルの場合、拡張子がサポートされている場合のみ追加
-                    if (SupportedInputImageExtensions.Contains(System.IO.Path.GetExtension(item).ToLower()))
+                    if (SupportedInputImageExtensions.Contains(Path.GetExtension(item).ToLower()))
                         filesToAdd.Add(item);
                 }
-                else if (System.IO.Directory.Exists(item))
+                else if (Directory.Exists(item))
                 {
                     // フォルダの場合、フォルダ内の画像ファイルを取得
-                    var imageFiles = System.IO.Directory.GetFiles(item, "*.*")
-                    .Where(file => SupportedInputImageExtensions.Contains(System.IO.Path.GetExtension(file).ToLower()));
+                    var imageFiles = Directory.GetFiles(item, "*.*")
+                    .Where(file => SupportedInputImageExtensions.Contains(Path.GetExtension(file).ToLower()));
 
                     filesToAdd.AddRange(imageFiles);
                 }
@@ -935,17 +935,7 @@ public partial class MainViewModel : ObservableObject
     /// <returns>エラーが発生したファイル名のリスト</returns>
     private async Task<ConcurrentBag<string>> ProcessImagesAsync(CropParameters parameters, ProgressViewModel progressVm, CancellationToken cancellationToken)
     {
-        return await Task.Run(() =>
-        {
-            if (OutputSettings.IsUseMultiThreading)
-            {
-                return ProcessImages(parameters, true, progressVm, cancellationToken);
-            }
-            else
-            {
-                return ProcessImages(parameters, false, progressVm, cancellationToken);
-            }
-        }, cancellationToken);
+        return await Task.Run(() => ProcessImages(parameters, OutputSettings.IsUseMultiThreading, progressVm, cancellationToken), cancellationToken);
     }
 
     /// <summary>
@@ -1035,15 +1025,11 @@ public partial class MainViewModel : ObservableObject
 
             cropped.SaveImage(outputFilePath);
 
-            return new ImageProcessResult { Success = true };
+            return new ImageProcessResult(true);
         }
         catch (Exception ex)
         {
-            return new ImageProcessResult
-            {
-                Success = false,
-                ErrorMessage = ex.Message
-            };
+            return new ImageProcessResult(false, ex.Message);
         }
 
         string PointToString(Point point)
@@ -1092,51 +1078,42 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// 補助クラス: 処理開始時に指定する切り抜きパラメータ
+    /// 補助レコード: 処理開始時に指定する切り抜きパラメータ
     /// </summary>
-    private class CropParameters
+    private record CropParameters
     {
         /// <summary>
         /// 切り抜き範囲の左上の座標
         /// </summary>
-        public Point LeftTop { get; set; }
+        public Point LeftTop { get; init; }
 
         /// <summary>
         /// 切り抜き範囲の右下の座標
         /// </summary>
-        public Point RightBottom { get; set; }
+        public Point RightBottom { get; init; }
 
         /// <summary>
         /// 出力フォルダのパス
         /// </summary>
-        public string OutputFolderPath { get; set; } = string.Empty;
+        public string OutputFolderPath { get; init; } = string.Empty;
 
         /// <summary>
         /// 出力画像の拡張子
         /// </summary>
-        public string OutputExtension { get; set; } = string.Empty;
+        public string OutputExtension { get; init; } = string.Empty;
 
         /// <summary>
         /// 切り抜く画像ファイルのパスのコレクション
         /// </summary>
-        public List<SelectionItem<string>> ImagePaths { get; set; } = [];
+        public List<SelectionItem<string>> ImagePaths { get; init; } = [];
     }
 
     /// <summary>
-    /// 補助クラス: 1つの画像に対する処理結果
+    /// 補助レコード: 1つの画像に対する処理結果
     /// </summary>
-    private class ImageProcessResult
-    {
-        /// <summary>
-        /// 処理が成功したかどうか
-        /// </summary>
-        public bool Success { get; set; }
-
-        /// <summary>
-        /// 処理に失敗した場合のエラーメッセージ
-        /// </summary>
-        public string ErrorMessage { get; set; } = string.Empty;
-    }
+    /// <param name="Success">処理が成功したかどうか</param>
+    /// <param name="ErrorMessage">処理に失敗した場合のエラーメッセージ</param>
+    private record ImageProcessResult(bool Success, string ErrorMessage = "");
     #endregion
 
     #region ヘルパーメソッド

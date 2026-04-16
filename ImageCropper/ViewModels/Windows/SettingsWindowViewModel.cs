@@ -14,14 +14,9 @@ namespace ImageCropper.ViewModels.Windows;
 public partial class SettingsWindowViewModel : ObservableObject
 {
     /// <summary>
-    /// サポートされている出力画像拡張子一覧
-    /// </summary>
-    public static readonly HashSet<string> SupportedOutputImageExtensions = [".bmp", ".dib", ".jpeg", ".jpg", ".jpe", ".jp2", ".png", ".pbm", ".pgm", ".ppm", ".sr", ".ras", ".tiff", ".tif"];
-
-    /// <summary>
     /// バインド用の出力拡張子リスト
     /// </summary>
-    public IList<string> SupportedOutputExtensions { get; } = SupportedOutputImageExtensions.ToList();
+    public IList<string> SupportedOutputExtensions { get; } = MainViewModel.SupportedOutputImageExtensions.ToList();
 
     /// <summary>
     /// 切り取り範囲表示モードの全リスト

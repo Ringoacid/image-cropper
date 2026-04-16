@@ -10,19 +10,12 @@ public static class SettingsHelper
 {
     public static string SettingsFilePath = "settings.json";
 
-    private static JsonSerializerOptions JsonOptions
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        get
-        {
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                PropertyNameCaseInsensitive = true,
-            };
-            return options;
-        }
-    }
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
 
     public static async Task SaveSettings(MainViewModel vm)
     {

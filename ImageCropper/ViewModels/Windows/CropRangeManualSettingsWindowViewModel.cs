@@ -2,13 +2,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageCropper.Models;
 using ImageCropper.Views.UserControls;
-using ImageCropper.Views.Windows;
 using System.Windows.Shapes;
 
 namespace ImageCropper.ViewModels.Windows;
-
-// 常にpx単位、左上と右下の座標を保持する範囲
-public record RectRange(double X1, double Y1, double X2, double Y2);
 
 public partial class CropRangeManualSettingsWindowViewModel : ObservableObject
 {

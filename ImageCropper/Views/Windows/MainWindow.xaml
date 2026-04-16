@@ -190,6 +190,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <WrapPanel VerticalAlignment="Center">
@@ -230,6 +231,21 @@
                                 <TextBlock Margin="5" Text="切り取り範囲が画像外でも処理" />
                                 <uc:ToggleSwitch HorizontalAlignment="Center" IsChecked="{Binding ViewModel.OutputSettings.IsCropOutsideImageAllowed}" />
                             </StackPanel>
+                        </WrapPanel>
+
+                        <WrapPanel Grid.Row="2" VerticalAlignment="Center">
+                            <TextBlock Margin="5" Text="テンプレート：" />
+                            <ComboBox
+                                Width="160"
+                                Margin="5"
+                                DisplayMemberPath="Name"
+                                ItemsSource="{Binding ViewModel.Presets}"
+                                SelectedItem="{Binding ViewModel.SelectedPreset}" />
+                            <Button
+                                Margin="5"
+                                Padding="5"
+                                Command="{Binding ViewModel.ApplyPresetCommand}"
+                                Content="適用" />
                         </WrapPanel>
                     </Grid>
 

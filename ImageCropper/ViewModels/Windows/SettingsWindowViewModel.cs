@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageCropper.Helpers;
 using ImageCropper.Models;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
@@ -291,6 +292,88 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         DialogResultRequested?.Invoke(this, true);
     }
+
+    #region テンプレート管理
+
+    /// <summary>
+    /// テンプレートのコレクション（MainViewModelのコレクションへの参照）
+    /// </summary>
+    public ObservableCollection<CropPreset> Presets => MainViewModel.Presets;
+
+    /// <summary>
+    /// 設定ウィンドウで選択中のテンプレート
+    /// </summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(DeletePresetCommand))]
+    private CropPreset? selectedPreset;
+
+    /// <summary>
+    /// テンプレートを削除できるかどうか
+    /// </summary>
+    private bool CanDeletePreset() => SelectedPreset != null;
+
+    /// <summary>
+    /// 現在の切り取り範囲・設定をテンプレートとして保存する
+    /// </summary>
+    [RelayCommand]
+    private async Task SaveCurrentAsPreset()
+    {
+        if (MainViewModel.CropRangePixelCoordinates is null)
+        {
+            MessageBox.Show("切り取り範囲が設定されていません。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        var preset = await ImageCropper.Views.Windows.PresetSaveDialog.ShowDialogAsync(
+            MainViewModel.CropRangePixelCoordinates,
+            MainViewModel.OutputSettings.Extension,
+            MainViewModel.OutputSettings.FolderPath,
+            Application.Current.MainWindow);
+
+        if (preset is null) return;
+
+        MainViewModel.Presets.Add(preset);
+
+        try
+        {
+            await SettingsHelper.SaveSettings(MainViewModel);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>
+    /// 選択中のテンプレートを削除する
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanDeletePreset))]
+    private async Task DeletePreset()
+    {
+        if (SelectedPreset is null) return;
+
+        var result = MessageBox.Show(
+            $"「{SelectedPreset.Name}」を削除しますか？",
+            "確認",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        MainViewModel.Presets.Remove(SelectedPreset);
+        SelectedPreset = null;
+
+        try
+        {
+            await SettingsHelper.SaveSettings(MainViewModel);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    #endregion
 
     /// <summary>
     /// キャンセルボタンが押されたときの処理。元の設定に戻してダイアログを閉じる。

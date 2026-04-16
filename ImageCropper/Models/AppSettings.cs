@@ -17,6 +17,11 @@ public class AppSettings
     /// </summary>
     public UISettings UI { get; set; } = new();
 
+    /// <summary>
+    /// テンプレートのリスト
+    /// </summary>
+    public List<CropPreset> Presets { get; set; } = [];
+
     #region 後方互換性のためのプロパティ（JSONデシリアライズ時に使用）
 
     /// <summary>

@@ -227,6 +227,42 @@
                 </ScrollViewer>
             </TabItem>
 
+            <TabItem Header="テンプレート">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border
+                        Padding="5"
+                        BorderBrush="#ccc"
+                        BorderThickness="1"
+                        CornerRadius="3">
+                        <ListBox
+                            BorderThickness="0"
+                            DisplayMemberPath="Name"
+                            ItemsSource="{Binding ViewModel.Presets}"
+                            SelectedItem="{Binding ViewModel.SelectedPreset}" />
+                    </Border>
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Margin="0,8,0,0"
+                        Orientation="Horizontal">
+                        <Button
+                            Padding="10,5"
+                            Command="{Binding ViewModel.SaveCurrentAsPresetCommand}"
+                            Content="現在の設定で保存" />
+                        <Button
+                            Margin="8,0,0,0"
+                            Padding="10,5"
+                            Command="{Binding ViewModel.DeletePresetCommand}"
+                            Content="削除" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="エクスポート/インポート">
                 <StackPanel Margin="10" VerticalAlignment="Top">
                     <TextBlock

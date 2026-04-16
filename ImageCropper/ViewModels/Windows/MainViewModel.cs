@@ -35,6 +35,42 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     private RectRange? cropRangePixelCoordinates;
+
+    /// <summary>
+    /// テンプレートのコレクション
+    /// </summary>
+    [ObservableProperty]
+    private ObservableCollection<CropPreset> presets = [];
+
+    /// <summary>
+    /// 現在選択中のテンプレート
+    /// </summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ApplyPresetCommand))]
+    private CropPreset? selectedPreset;
+
+    /// <summary>
+    /// テンプレートを適用できるかどうか
+    /// </summary>
+    private bool CanApplyPreset() => SelectedPreset != null;
+
+    /// <summary>
+    /// 選択中のテンプレートを現在の設定に適用する
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanApplyPreset))]
+    private void ApplyPreset()
+    {
+        if (SelectedPreset is null) return;
+
+        CropRangePixelCoordinates = SelectedPreset.CropRange;
+
+        if (SelectedPreset.OutputExtension is not null)
+            OutputSettings.Extension = SelectedPreset.OutputExtension;
+
+        if (!string.IsNullOrEmpty(SelectedPreset.OutputFolderPath))
+            OutputSettings.FolderPath = SelectedPreset.OutputFolderPath;
+    }
+
     /// <summary>
     /// サポートされている出力画像拡張子一覧
     /// </summary>

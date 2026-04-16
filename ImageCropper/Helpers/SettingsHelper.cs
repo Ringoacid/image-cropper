@@ -22,7 +22,8 @@ public static class SettingsHelper
         var settings = new AppSettings
         {
             Output = new OutputSettings(vm.OutputSettings),
-            UI = new UISettings(vm.UISettings)
+            UI = new UISettings(vm.UISettings),
+            Presets = vm.Presets.Select(p => new CropPreset(p)).ToList()
         };
 
         // 設定ファイルのディレクトリが存在しない場合は作成
@@ -54,6 +55,11 @@ public static class SettingsHelper
             if (settings.UI != null)
             {
                 vm.UISettings.CopyFrom(settings.UI);
+            }
+            vm.Presets.Clear();
+            foreach (var preset in settings.Presets)
+            {
+                vm.Presets.Add(preset);
             }
         }
     }

@@ -1,0 +1,71 @@
+<Window
+    x:Class="ImageCropper.Views.Windows.PresetSaveDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:ImageCropper.Views.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="テンプレートを保存"
+    Width="400"
+    SizeToContent="Height"
+    ResizeMode="NoResize"
+    d:DataContext="{d:DesignInstance Type=local:PresetSaveDialog}"
+    WindowStartupLocation="CenterOwner"
+    mc:Ignorable="d">
+
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="5" />
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Margin="15">
+
+        <!-- テンプレート名 -->
+        <TextBlock FontWeight="SemiBold" Text="テンプレート名：" />
+        <TextBox
+            Margin="5,3,5,10"
+            Text="{Binding ViewModel.PresetName, UpdateSourceTrigger=PropertyChanged}" />
+
+        <!-- 出力形式を含める -->
+        <CheckBox
+            Margin="5,3"
+            Content="出力形式を含める"
+            IsChecked="{Binding ViewModel.IncludeOutputExtension}" />
+        <TextBlock
+            Margin="20,0,5,8"
+            Foreground="Gray"
+            Text="{Binding ViewModel.CurrentOutputExtension, StringFormat='現在の値：{0}'}" />
+
+        <!-- 出力先フォルダを含める -->
+        <CheckBox
+            Margin="5,3"
+            Content="出力先フォルダを含める"
+            IsChecked="{Binding ViewModel.IncludeOutputFolderPath}" />
+        <TextBlock
+            Margin="20,0,5,12"
+            Foreground="Gray"
+            Text="{Binding ViewModel.CurrentOutputFolderPath, StringFormat='現在の値：{0}'}"
+            TextWrapping="Wrap" />
+
+        <!-- OK / キャンセル -->
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button
+                MinWidth="80"
+                Margin="5"
+                Padding="10,5"
+                Command="{Binding ViewModel.OkCommand}"
+                Content="OK"
+                IsDefault="True" />
+            <Button
+                MinWidth="80"
+                Margin="5"
+                Padding="10,5"
+                Command="{Binding ViewModel.CancelCommand}"
+                Content="キャンセル"
+                IsCancel="True" />
+        </StackPanel>
+
+    </StackPanel>
+</Window>

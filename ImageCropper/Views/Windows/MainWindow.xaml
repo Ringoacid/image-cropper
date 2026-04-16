@@ -1,4 +1,4 @@
-﻿<Window
+<Window
     x:Class="ImageCropper.Views.Windows.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -32,6 +32,12 @@
         </i:EventTrigger>
     </i:Interaction.Triggers>
 
+    <Window.InputBindings>
+        <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding ViewModel.UndoCommand}" />
+        <KeyBinding Key="Y" Modifiers="Ctrl" Command="{Binding ViewModel.RedoCommand}" />
+        <KeyBinding Key="Z" Modifiers="Ctrl+Shift" Command="{Binding ViewModel.RedoCommand}" />
+    </Window.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -46,6 +52,10 @@
                 <Separator />
                 <MenuItem Command="{Binding ViewModel.SetOutputFolderClickCommand}" Header="出力先フォルダを選択" />
                 <MenuItem Command="{Binding ViewModel.CropImageCommand}" Header="画像切り取り" />
+            </MenuItem>
+            <MenuItem Header="編集">
+                <MenuItem Command="{Binding ViewModel.UndoCommand}" Header="元に戻す" InputGestureText="Ctrl+Z" />
+                <MenuItem Command="{Binding ViewModel.RedoCommand}" Header="やり直す" InputGestureText="Ctrl+Y" />
             </MenuItem>
             <MenuItem Header="設定">
                 <MenuItem Command="{Binding ViewModel.OpenSettingsWindowCommand}" Header="設定ウィンドウを開く" />

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageCropper.Helpers;
 using ImageCropper.Models;
@@ -35,6 +35,82 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     private RectRange? cropRangePixelCoordinates;
+
+    #region アンドゥ・リドゥ
+
+    private readonly Stack<RectRange?> _undoStack = new();
+    private readonly Stack<RectRange?> _redoStack = new();
+    private bool _isRestoringState = false;
+
+    partial void OnCropRangePixelCoordinatesChanging(RectRange? oldValue, RectRange? newValue)
+    {
+        if (_isRestoringState || IsManualSettingsWindowOpen) return;
+        if (oldValue is null && newValue is null) return;
+
+        if (!EqualityComparer<RectRange?>.Default.Equals(oldValue, newValue))
+        {
+            _undoStack.Push(oldValue);
+            _redoStack.Clear();
+            UndoCommand.NotifyCanExecuteChanged();
+            RedoCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    private RectRange? _stateBeforeManualSettings = null;
+
+    partial void OnIsManualSettingsWindowOpenChanged(bool oldValue, bool newValue)
+    {
+        if (newValue)
+        {
+            // 開かれた時：開く前の状態を記録
+            _stateBeforeManualSettings = CropRangePixelCoordinates;
+        }
+        else
+        {
+            // 閉じられた時：開く前の状態と変わっていれば、アンドゥスタックに積む
+            if (!EqualityComparer<RectRange?>.Default.Equals(_stateBeforeManualSettings, CropRangePixelCoordinates))
+            {
+                _undoStack.Push(_stateBeforeManualSettings);
+                _redoStack.Clear();
+                UndoCommand.NotifyCanExecuteChanged();
+                RedoCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    private bool CanUndo() => _undoStack.Count > 0;
+
+    [RelayCommand(CanExecute = nameof(CanUndo))]
+    private void Undo()
+    {
+        if (_undoStack.Count > 0)
+        {
+            _isRestoringState = true;
+            _redoStack.Push(CropRangePixelCoordinates);
+            CropRangePixelCoordinates = _undoStack.Pop();
+            _isRestoringState = false;
+            UndoCommand.NotifyCanExecuteChanged();
+            RedoCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    private bool CanRedo() => _redoStack.Count > 0;
+
+    [RelayCommand(CanExecute = nameof(CanRedo))]
+    private void Redo()
+    {
+        if (_redoStack.Count > 0)
+        {
+            _isRestoringState = true;
+            _undoStack.Push(CropRangePixelCoordinates);
+            CropRangePixelCoordinates = _redoStack.Pop();
+            _isRestoringState = false;
+            UndoCommand.NotifyCanExecuteChanged();
+            RedoCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    #endregion
 
     /// <summary>
     /// テンプレートのコレクション

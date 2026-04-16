@@ -223,7 +223,8 @@ public partial class SettingsWindowViewModel : ObservableObject
                 var settings = new AppSettings
                 {
                     Output = new OutputSettings(EditingOutputSettings),
-                    UI = new UISettings(EditingUISettings)
+                    UI = new UISettings(EditingUISettings),
+                    Presets = Presets.Select(p => new CropPreset(p)).ToList()
                 };
                 await SettingsHelper.ExportSettings(settings, saveFileDialog.FileName);
                 MessageBox.Show("設定をエクスポートしました。", "エクスポート完了", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -259,6 +260,14 @@ public partial class SettingsWindowViewModel : ObservableObject
                     if (settings.UI != null)
                     {
                         EditingUISettings.CopyFrom(settings.UI);
+                    }
+                    if (settings.Presets != null)
+                    {
+                        Presets.Clear();
+                        foreach (var preset in settings.Presets)
+                        {
+                            Presets.Add(preset);
+                        }
                     }
                     MessageBox.Show("設定をインポートしました。", "インポート完了", MessageBoxButton.OK, MessageBoxImage.Information);
                 }

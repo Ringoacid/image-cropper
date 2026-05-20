@@ -1,4 +1,4 @@
-﻿using ImageCropper.Models;
+using ImageCropper.Models;
 using ImageCropper.Views.Windows;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,7 +29,7 @@ public partial class EditableImage : UserControl
     public static readonly DependencyProperty ImageSourceProperty =
         DependencyProperty.Register(
             nameof(ImageSource),
-            typeof(ImageSource),
+            typeof(object),
             typeof(EditableImage),
             new FrameworkPropertyMetadata(
                 null,
@@ -40,19 +40,45 @@ public partial class EditableImage : UserControl
                 UpdateSourceTrigger.LostFocus));
 
     /// <summary>
-    /// 表示する画像ソース
+    /// 表示する画像ソース（ファイルパスの文字列、またはImageSourceオブジェクト）
     /// </summary>
-    public ImageSource ImageSource
+    public object? ImageSource
     {
-        get => (ImageSource)GetValue(ImageSourceProperty);
+        get => GetValue(ImageSourceProperty);
         set => SetValue(ImageSourceProperty, value);
     }
 
     private static void OnImageSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not EditableImage control) return;
-        if (e.NewValue is not ImageSource newImageSource) return;
-        control.image.Source = newImageSource;
+
+        if (e.NewValue is string filePath)
+        {
+            try
+            {
+                if (System.IO.File.Exists(filePath))
+                {
+                    byte[] data = System.IO.File.ReadAllBytes(filePath);
+                    using var mat = OpenCvSharp.Cv2.ImDecode(data, OpenCvSharp.ImreadModes.Unchanged);
+                    if (!mat.Empty())
+                    {
+                        control.image.Source = ImageCropper.Helpers.OpenCvWpfHelper.ToBitmapSource(mat);
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // 読み込み失敗時はフォールバック
+            }
+        }
+        else if (e.NewValue is ImageSource newImageSource)
+        {
+            control.image.Source = newImageSource;
+            return;
+        }
+
+        control.image.Source = null;
     }
 
     #endregion

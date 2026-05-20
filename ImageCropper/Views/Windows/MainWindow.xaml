@@ -9,6 +9,7 @@
     xmlns:local="clr-namespace:ImageCropper.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:uc="clr-namespace:ImageCropper.Views.UserControls"
+    xmlns:vm="clr-namespace:ImageCropper.ViewModels.Windows"
     Title="ImageCropper"
     Width="800"
     Height="450"
@@ -83,13 +84,16 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock
-                    Margin="5"
-                    HorizontalAlignment="Left"
-                    FontSize="16"
-                    FontWeight="Bold"
-                    Text="入力画像" />
 
+
+                <WrapPanel Margin="5" VerticalAlignment="Center">
+                    <TextBlock
+                        Margin="5"
+                        HorizontalAlignment="Left"
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Text="入力画像" />
+                </WrapPanel>
 
                 <ListView
                     Grid.Row="1"

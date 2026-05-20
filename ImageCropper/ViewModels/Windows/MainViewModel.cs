@@ -150,12 +150,12 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// サポートされている出力画像拡張子一覧
     /// </summary>
-    public static readonly HashSet<string> SupportedOutputImageExtensions = [".bmp", ".dib", ".jpeg", ".jpg", ".jpe", ".jp2", ".png", ".pbm", ".pgm", ".ppm", ".sr", ".ras", ".tiff", ".tif"];
+    public static readonly HashSet<string> SupportedOutputImageExtensions = [".bmp", ".dib", ".jpeg", ".jpg", ".jpe", ".jp2", ".png", ".webp", ".pbm", ".pgm", ".ppm", ".pxm", ".pnm", ".pfm", ".sr", ".ras", ".tiff", ".tif", ".exr", ".hdr", ".pic"];
 
     /// <summary>
     /// サポートされている入力画像拡張子一覧
     /// </summary>
-    private static readonly HashSet<string> SupportedInputImageExtensions = [".jpg", ".jpeg", ".jpe", ".png", ".bmp", ".dib", ".gif", ".tiff", ".tif", ".webp", ".jp2", ".pbm", ".pgm", ".ppm", ".sr", ".ras", ".exr", ".hdr"];
+    private static readonly HashSet<string> SupportedInputImageExtensions = [".jpg", ".jpeg", ".jpe", ".png", ".bmp", ".dib", ".gif", ".tiff", ".tif", ".webp", ".jp2", ".pbm", ".pgm", ".ppm", ".pxm", ".pnm", ".pfm", ".sr", ".ras", ".exr", ".hdr", ".pic"];
 
     /// <summary>
     /// バインド用の出力拡張子リスト
@@ -329,7 +329,7 @@ public partial class MainViewModel : ObservableObject
         var openFileDialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "画像を選んでください（複数選択可）",
-            Filter = "Image Files|*.jpg;*.jpeg;*.jpe;*.png;*.bmp;*.dib;*.gif;*.tiff;*.tif;*.webp;*.jp2;*.pbm;*.pgm;*.ppm;*.sr;*.ras;*.exr;*.hdr|All Files|*.*",
+            Filter = "Image Files|*.jpg;*.jpeg;*.jpe;*.png;*.bmp;*.dib;*.gif;*.tiff;*.tif;*.webp;*.jp2;*.pbm;*.pgm;*.ppm;*.pxm;*.pnm;*.pfm;*.sr;*.ras;*.exr;*.hdr;*.pic|All Files|*.*",
             Multiselect = true
         };
 
@@ -1093,7 +1093,8 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            using Mat mat = Cv2.ImRead(imagePath.Item);
+            byte[] inputBytes = File.ReadAllBytes(imagePath.Item);
+            using Mat mat = Cv2.ImDecode(inputBytes, ImreadModes.Unchanged);
 
             if (mat.Empty())
             {
@@ -1135,7 +1136,8 @@ public partial class MainViewModel : ObservableObject
                 Directory.CreateDirectory(outputDir);
             }
 
-            cropped.SaveImage(outputFilePath);
+            Cv2.ImEncode(parameters.OutputExtension, cropped, out byte[] outputBytes);
+            File.WriteAllBytes(outputFilePath, outputBytes);
 
             return new ImageProcessResult(true);
         }

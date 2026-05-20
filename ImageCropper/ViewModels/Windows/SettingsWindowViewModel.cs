@@ -82,9 +82,14 @@ public partial class SettingsWindowViewModel : ObservableObject
     public bool IsCropOutsideImageAllowedChanged => EditingOutputSettings.IsCropOutsideImageAllowed != OriginalOutputSettings.IsCropOutsideImageAllowed;
 
     /// <summary>
+    /// ファイル名パターンが変更されたかどうか
+    /// </summary>
+    public bool IsFileNamePatternChanged => EditingOutputSettings.FileNamePattern != OriginalOutputSettings.FileNamePattern;
+
+    /// <summary>
     /// いずれかの出力設定が変更されたかどうか
     /// </summary>
-    public bool IsAnyOutputSettingChanged => IsOutputExtensionChanged || IsOutputFolderPathChanged || IsUseMultiThreadingChanged || IsCropOutsideImageAllowedChanged;
+    public bool IsAnyOutputSettingChanged => IsOutputExtensionChanged || IsOutputFolderPathChanged || IsUseMultiThreadingChanged || IsCropOutsideImageAllowedChanged || IsFileNamePatternChanged;
 
     /// <summary>
     /// 表示モードの設定が変更されたかどうか
@@ -138,6 +143,7 @@ public partial class SettingsWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(IsOutputFolderPathChanged));
         OnPropertyChanged(nameof(IsUseMultiThreadingChanged));
         OnPropertyChanged(nameof(IsCropOutsideImageAllowedChanged));
+        OnPropertyChanged(nameof(IsFileNamePatternChanged));
         OnPropertyChanged(nameof(IsAnyOutputSettingChanged));
         OnPropertyChanged(nameof(IsAnySettingChanged));
     }

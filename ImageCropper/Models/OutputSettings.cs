@@ -31,6 +31,12 @@ public partial class OutputSettings : ObservableObject
     [ObservableProperty]
     private bool isCropOutsideImageAllowed = true;
 
+    /// <summary>
+    /// 出力ファイル名パターン（プレースホルダーを含む）
+    /// </summary>
+    [ObservableProperty]
+    private string fileNamePattern = "{FileName}_cropped";
+
 
     /// <summary>
     /// デフォルト値で初期化された新しいインスタンスを作成する
@@ -49,6 +55,7 @@ public partial class OutputSettings : ObservableObject
         FolderPath = other.FolderPath;
         IsUseMultiThreading = other.IsUseMultiThreading;
         IsCropOutsideImageAllowed = other.IsCropOutsideImageAllowed;
+        FileNamePattern = other.FileNamePattern;
     }
 
     /// <summary>
@@ -61,5 +68,6 @@ public partial class OutputSettings : ObservableObject
         FolderPath = other.FolderPath;
         IsUseMultiThreading = other.IsUseMultiThreading;
         IsCropOutsideImageAllowed = other.IsCropOutsideImageAllowed;
+        FileNamePattern = other.FileNamePattern;
     }
 }

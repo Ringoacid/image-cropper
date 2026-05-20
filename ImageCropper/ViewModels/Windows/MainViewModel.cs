@@ -809,7 +809,20 @@ public partial class MainViewModel : ObservableObject
         if (!ValidateInputs())
             return;
 
-        var cropParameters = PrepareCropParameters(CreatedRectangle!); // ValidateInputsがtrueなら、CreatedRectangleはnullではない
+        CropParameters cropParameters;
+        try
+        {
+            cropParameters = PrepareCropParameters(CreatedRectangle!);
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessageBox("エラー", $"パラメータ作成中にエラーが発生しました:\n{ex.Message}");
+            return;
+        }
+
+        // 事前重複・上書き警告チェック
+        if (!ValidateOutputPaths(cropParameters))
+            return;
 
         _cancellationTokenSource = new CancellationTokenSource();
 
@@ -986,6 +999,7 @@ public partial class MainViewModel : ObservableObject
             RightBottom = rightBottomOriginal,
             OutputFolderPath = OutputSettings.FolderPath,
             OutputExtension = OutputSettings.Extension,
+            FileNamePattern = OutputSettings.FileNamePattern,
             ImagePaths = ImagePaths.ToList()
         };
     }
@@ -1064,11 +1078,11 @@ public partial class MainViewModel : ObservableObject
             MaxDegreeOfParallelism = isParallel ? Math.Max(1, Environment.ProcessorCount - 1) : 1 // 並列処理ならCPUコア数-1、直列処理なら1
         };
 
-        Parallel.ForEach(parameters.ImagePaths, parallelOptions, imagePath =>
+        Parallel.ForEach(parameters.ImagePaths, parallelOptions, (imagePath, state, index) =>
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var result = ProcessSingleImage(imagePath, parameters);
+            var result = ProcessSingleImage(imagePath, parameters, (int)index);
 
             var currentCount = Interlocked.Increment(ref processedCount);
 
@@ -1088,8 +1102,9 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     /// <param name="imagePath">画像ファイルパス</param>
     /// <param name="parameters">切り抜きパラメータ</param>
+    /// <param name="index">バッチ処理におけるインデックス (0始まり)</param>
     /// <returns>処理結果</returns>
-    private ImageProcessResult ProcessSingleImage(SelectionItem<string> imagePath, CropParameters parameters)
+    private ImageProcessResult ProcessSingleImage(SelectionItem<string> imagePath, CropParameters parameters, int index)
     {
         try
         {
@@ -1127,7 +1142,12 @@ public partial class MainViewModel : ObservableObject
                 throw new InvalidDataException("切り抜き範囲が不正です。");
 
             using Mat cropped = new(mat, new OpenCvSharp.Rect((int)parameters.LeftTop.X, (int)parameters.LeftTop.Y, width, height));
-            var outputFilePath = Path.Combine(parameters.OutputFolderPath, Path.GetFileNameWithoutExtension(imagePath.Item) + parameters.OutputExtension);
+
+            // ファイル名解決
+            string pattern = string.IsNullOrEmpty(parameters.FileNamePattern) ? "{FileName}_cropped" : parameters.FileNamePattern;
+            string finalFileName = ResolveOutputFileName(imagePath.Item, pattern, index);
+
+            var outputFilePath = Path.Combine(parameters.OutputFolderPath, finalFileName + parameters.OutputExtension);
 
             // 出力ディレクトリが存在しない場合は作成
             var outputDir = Path.GetDirectoryName(outputFilePath);
@@ -1152,6 +1172,107 @@ public partial class MainViewModel : ObservableObject
             var roundedY = Math.Round(point.Y, 2, MidpointRounding.AwayFromZero);
             return $"({roundedX}, {roundedY})";
         }
+    }
+
+    /// <summary>
+    /// 指定された画像パスとパラメータから出力ファイル名を解決する
+    /// </summary>
+    private string ResolveOutputFileName(string originalPath, string pattern, int index)
+    {
+        string finalFileName = pattern;
+
+        // 1. ファイル名
+        finalFileName = finalFileName.Replace("{FileName}", Path.GetFileNameWithoutExtension(originalPath));
+
+        // 2. 作成日時 (ファイルが存在しない等、取得失敗時はエラー)
+        if (finalFileName.Contains("{DateTime}"))
+        {
+            if (!File.Exists(originalPath))
+            {
+                throw new FileNotFoundException("元画像ファイルが見つからないため、作成日時を取得できませんでした。", originalPath);
+            }
+            var creationTime = File.GetCreationTime(originalPath);
+            finalFileName = finalFileName.Replace("{DateTime}", creationTime.ToString("yyyyMMdd_HHmmss"));
+        }
+
+        // 3. インデックス (1始まりの連番)
+        finalFileName = finalFileName.Replace("{Index}", (index + 1).ToString());
+
+        return finalFileName;
+    }
+
+    /// <summary>
+    /// 出力先の重複および上書きを確認し、警告を表示する
+    /// </summary>
+    private bool ValidateOutputPaths(CropParameters parameters)
+    {
+        var outputPaths = new List<string>();
+        var pattern = string.IsNullOrEmpty(parameters.FileNamePattern) ? "{FileName}_cropped" : parameters.FileNamePattern;
+
+        try
+        {
+            for (int i = 0; i < parameters.ImagePaths.Count; i++)
+            {
+                var originalPath = parameters.ImagePaths[i].Item;
+                var fileName = ResolveOutputFileName(originalPath, pattern, i);
+                var fullPath = Path.Combine(parameters.OutputFolderPath, fileName + parameters.OutputExtension);
+                outputPaths.Add(fullPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessageBox("エラー", $"ファイル名解決中にエラーが発生しました:\n{ex.Message}");
+            return false;
+        }
+
+        // 1. 出力ファイル名同士の重複チェック
+        var duplicates = outputPaths
+            .GroupBy(p => p, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => Path.GetFileName(g.Key))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (duplicates.Count > 0)
+        {
+            var msg = "出力ファイル名が重複している画像が存在します。\n" +
+                      "このまま実行すると一部の画像が上書きされて消失する可能性があります。\n\n" +
+                      "重複するファイル名の例:\n" +
+                      string.Join("\n", duplicates.Take(5)) +
+                      (duplicates.Count > 5 ? $"\n...他 {duplicates.Count - 5} 件" : "") +
+                      "\n\n処理を実行しますか？";
+
+            var result = ShowWarningMessageBox("警告：ファイル名重複", msg, MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.No)
+            {
+                return false;
+            }
+        }
+
+        // 2. 既存ファイルとの上書きチェック
+        var existingFiles = outputPaths
+            .Where(File.Exists)
+            .Select(Path.GetFileName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (existingFiles.Count > 0)
+        {
+            var msg = "出力先フォルダに同名のファイルが既に存在します。\n" +
+                      "このまま実行すると既存のファイルが上書きされます。\n\n" +
+                      "対象ファイル名の例:\n" +
+                      string.Join("\n", existingFiles.Take(5)) +
+                      (existingFiles.Count > 5 ? $"\n...他 {existingFiles.Count - 5} 件" : "") +
+                      "\n\n処理を実行しますか？";
+
+            var result = ShowWarningMessageBox("警告：上書きの確認", msg, MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.No)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -1215,6 +1336,11 @@ public partial class MainViewModel : ObservableObject
         /// 出力画像の拡張子
         /// </summary>
         public string OutputExtension { get; init; } = string.Empty;
+
+        /// <summary>
+        /// 出力ファイル名パターン（プレースホルダーを含む）
+        /// </summary>
+        public string FileNamePattern { get; init; } = string.Empty;
 
         /// <summary>
         /// 切り抜く画像ファイルのパスのコレクション

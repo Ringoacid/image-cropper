@@ -139,6 +139,28 @@
                             Padding="5"
                             CornerRadius="5"
                             Style="{StaticResource ChangedHighlightBorder}"
+                            Tag="{Binding ViewModel.IsFileNamePatternChanged}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock
+                                    Grid.Row="0"
+                                    Style="{StaticResource SettingLabel}"
+                                    Text="出力ファイル名パターン：" />
+                                <uc:PrefixTextBox
+                                    Grid.Row="1"
+                                    Margin="5,5,5,10"
+                                    Text="{Binding ViewModel.EditingOutputSettings.FileNamePattern, Mode=TwoWay}" />
+                            </Grid>
+                        </Border>
+
+                        <Border
+                            Margin="0,5"
+                            Padding="5"
+                            CornerRadius="5"
+                            Style="{StaticResource ChangedHighlightBorder}"
                             Tag="{Binding ViewModel.IsUseMultiThreadingChanged}">
                             <Grid>
                                 <Grid.ColumnDefinitions>

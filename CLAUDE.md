@@ -7,7 +7,7 @@
 - **Language:** C# 13 / .NET 10.0-windows7.0
 - **UI Framework:** WPF (Windows Presentation Foundation)
 - **Architecture Pattern:** MVVM (Model-View-ViewModel)
-- **Current Version:** 1.2.0.0
+- **Current Version:** 1.3.0.0
 - **Documentation language:** Japanese (README, comments, UI strings)
 
 ---
@@ -242,6 +242,7 @@ The logic lives in `EditableImage.xaml.cs` (mouse event handlers). Key methods h
 
 | Version | Key Changes |
 |---|---|
+| 1.3.0.0 | コードレビューに基づく36件の不具合・警告修正（設定保存同期待機、上書き/パストラバーサル防御、メモリ消費削減とリーク防止、UIキャスト安全化、各種ダイアログEsc対応、MVVM準拠等） |
 | 1.2.0.0 | アンドゥ・リドゥ機能の追加、出力ファイル名パターンのカスタマイズおよび重複・上書き警告、サポート画像フォーマットの拡充、切り取りプリセット機能の追加 |
 | 1.1.0.0 | Replaced Velopack with GitHub Releases API for updates; added Shift+drag aspect-ratio lock on corner handles |
 | 1.0.0.0 | Initial release |

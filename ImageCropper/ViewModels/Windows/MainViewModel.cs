@@ -205,13 +205,13 @@ public partial class MainViewModel : ObservableObject
 
             if (!EqualityComparer<SelectionItem<string>?>.Default.Equals(selectedImage, value))
             {
-                // 変更があった
-                OnSelectedImageChanging(value);
-                OnSelectedImageChanging(default, value);
-                OnPropertyChanged(nameof(SelectedImage));
+                OnPropertyChanging(nameof(SelectedImage));
+                var oldValue = selectedImage;
                 selectedImage = value;
+                OnSelectedImageChanging(value);
+                OnSelectedImageChanging(oldValue, value);
                 OnSelectedImageChanged(value);
-                OnSelectedImageChanged(default, value);
+                OnSelectedImageChanged(oldValue, value);
                 OnPropertyChanged(nameof(SelectedImage));
             }
         }
@@ -282,20 +282,17 @@ public partial class MainViewModel : ObservableObject
     {
     }
 
-    /// <summary>
-    /// EditableImageの参照（座標変換に使用）
-    /// </summary>
-    public EditableImage? EditableImageControl { get; set; }
+
 
     /// <summary>
     /// ウィンドウ読み込み時の処理。設定を読み込む。
     /// </summary>
     [RelayCommand]
-    private void OnLoaded()
+    private async Task OnLoaded()
     {
         try
         {
-            SettingsHelper.LoadSettings(this, false).ConfigureAwait(false);
+            await SettingsHelper.LoadSettings(this, false);
         }
         catch (Exception ex)
         {
@@ -311,7 +308,7 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            SettingsHelper.SaveSettings(this).ConfigureAwait(false);
+            SettingsHelper.SaveSettings(this).GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {
@@ -498,7 +495,7 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 for (int i = 0; i < items.Count; i++)
                 {
@@ -507,7 +504,7 @@ public partial class MainViewModel : ObservableObject
                     var index = i;
                     var item = items[index];
 
-                    Application.Current.Dispatcher.Invoke(() =>
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         ImagePaths.Add(item);
 
@@ -711,7 +708,7 @@ public partial class MainViewModel : ObservableObject
         var currentSelected = SelectedImage;
         if (currentSelected is not null && targets.Contains(currentSelected))
         {
-            Application.Current.Dispatcher.Invoke(() => SelectedImage = null);
+            await Application.Current.Dispatcher.InvokeAsync(() => SelectedImage = null);
         }
 
         try
@@ -719,7 +716,7 @@ public partial class MainViewModel : ObservableObject
             // SelectedImageの変更を一時的に抑止。ObservableHashSetの変更通知でSelectedImageが変わるのを防ぐため。
             IsSelectedImageChangeable = false;
 
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 for (int i = 0; i < targets.Count; i++)
                 {
@@ -728,7 +725,7 @@ public partial class MainViewModel : ObservableObject
                     var index = i;
                     var target = targets[index];
 
-                    Application.Current.Dispatcher.Invoke(() =>
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         ImagePaths.Remove(target);
 
@@ -739,7 +736,7 @@ public partial class MainViewModel : ObservableObject
                     });
                 }
 
-                Application.Current.Dispatcher.Invoke(() => SelectedImages.Clear());
+                await Application.Current.Dispatcher.InvokeAsync(() => SelectedImages.Clear());
             }, cts.Token);
         }
         catch (OperationCanceledException)
@@ -783,11 +780,7 @@ public partial class MainViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(CropImageCommand))]
     private bool isManualSettingsWindowOpen = false;
 
-    /// <summary>
-    /// 切り抜き範囲のRectangle
-    /// </summary>
-    [ObservableProperty]
-    private Rectangle? createdRectangle;
+
 
     /// <summary>
     /// 切り抜き処理キャンセル用トークンのソース
@@ -812,7 +805,7 @@ public partial class MainViewModel : ObservableObject
         CropParameters cropParameters;
         try
         {
-            cropParameters = PrepareCropParameters(CreatedRectangle!);
+            cropParameters = PrepareCropParameters();
         }
         catch (Exception ex)
         {
@@ -970,7 +963,7 @@ public partial class MainViewModel : ObservableObject
             return false;
         }
 
-        if (CreatedRectangle is null)
+        if (CropRangePixelCoordinates is null)
         {
             ShowErrorMessageBox("エラー", "切り抜く範囲を選択してください。");
             return false;
@@ -982,21 +975,22 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// 切り抜きパラメータを作成する。
     /// </summary>
-    /// <param name="createdRectangle">切り抜き範囲</param>
     /// <returns>切り抜きパラメータ</returns>
-    private CropParameters PrepareCropParameters(Rectangle createdRectangle)
+    private CropParameters PrepareCropParameters()
     {
-        if (EditableImageControl is null)
+        if (CropRangePixelCoordinates is null)
         {
-            throw new InvalidOperationException("EditableImageControl is not set.");
+            throw new InvalidOperationException("CropRangePixelCoordinates is not set.");
         }
 
-        (Point leftTop, Point rightBottomOriginal) = EditableImageControl.GetRectangleCoordinates(createdRectangle);
+        var range = CropRangePixelCoordinates;
+        var leftTop = new Point(range.X1, range.Y1);
+        var rightBottom = new Point(range.X2, range.Y2);
 
         return new CropParameters
         {
             LeftTop = leftTop,
-            RightBottom = rightBottomOriginal,
+            RightBottom = rightBottom,
             OutputFolderPath = OutputSettings.FolderPath,
             OutputExtension = OutputSettings.Extension,
             FileNamePattern = OutputSettings.FileNamePattern,
@@ -1059,39 +1053,37 @@ public partial class MainViewModel : ObservableObject
     /// <param name="progressVm">進捗ViewModel</param>
     /// <param name="cancellationToken">キャンセルトークン</param>
     /// <returns>エラーが発生したファイル名のリスト</returns>
-    private async Task<ConcurrentBag<string>> ProcessImagesAsync(CropParameters parameters, ProgressViewModel progressVm, CancellationToken cancellationToken)
-    {
-        return await Task.Run(() => ProcessImages(parameters, OutputSettings.IsUseMultiThreading, progressVm, cancellationToken), cancellationToken);
-    }
-
     /// <summary>
-    /// 画像を並列で切り抜き処理する。
+    /// 画像の切り抜き処理を非同期で実行する。
     /// </summary>
-    private ConcurrentBag<string> ProcessImages(CropParameters parameters, bool isParallel, ProgressViewModel progressVm, CancellationToken cancellationToken)
+    private async Task<ConcurrentBag<string>> ProcessImagesAsync(CropParameters parameters, ProgressViewModel progressVm, CancellationToken cancellationToken)
     {
         var processedCount = 0;
         var errors = new ConcurrentBag<string>();
+        bool isParallel = OutputSettings.IsUseMultiThreading;
 
         var parallelOptions = new ParallelOptions
         {
             CancellationToken = cancellationToken,
-            MaxDegreeOfParallelism = isParallel ? Math.Max(1, Environment.ProcessorCount - 1) : 1 // 並列処理ならCPUコア数-1、直列処理なら1
+            MaxDegreeOfParallelism = isParallel ? Math.Max(1, Environment.ProcessorCount - 1) : 1
         };
 
-        Parallel.ForEach(parameters.ImagePaths, parallelOptions, (imagePath, state, index) =>
-        {
-            cancellationToken.ThrowIfCancellationRequested();
+        var indexedImagePaths = parameters.ImagePaths.Select((item, index) => (item, index));
 
-            var result = ProcessSingleImage(imagePath, parameters, (int)index);
+        await Parallel.ForEachAsync(indexedImagePaths, parallelOptions, async (pair, ct) =>
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var result = ProcessSingleImage(pair.item, parameters, pair.index);
 
             var currentCount = Interlocked.Increment(ref processedCount);
 
             if (!result.Success)
             {
-                errors.Add($"{Path.GetFileName(imagePath.Item)}: {result.ErrorMessage}");
+                errors.Add($"{Path.GetFileName(pair.item.Item)}: {result.ErrorMessage}");
             }
 
-            UpdateProgress(progressVm, currentCount, imagePath, result, parameters.ImagePaths.Count);
+            await UpdateProgressAsync(progressVm, currentCount, pair.item, result, parameters.ImagePaths.Count);
         });
 
         return errors;
@@ -1108,8 +1100,7 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            byte[] inputBytes = File.ReadAllBytes(imagePath.Item);
-            using Mat mat = Cv2.ImDecode(inputBytes, ImreadModes.Unchanged);
+            using Mat mat = OpenCvWpfHelper.LoadImage(imagePath.Item);
 
             if (mat.Empty())
             {
@@ -1135,13 +1126,16 @@ public partial class MainViewModel : ObservableObject
                     throw new Exception(errormessage);
             }
 
-            int width = (int)(rightBottom.X - parameters.LeftTop.X);
-            int height = (int)(rightBottom.Y - parameters.LeftTop.Y);
+            double leftTopX = Math.Max(0, parameters.LeftTop.X);
+            double leftTopY = Math.Max(0, parameters.LeftTop.Y);
+
+            int width = (int)(rightBottom.X - leftTopX);
+            int height = (int)(rightBottom.Y - leftTopY);
 
             if (width <= 0 || height <= 0)
                 throw new InvalidDataException("切り抜き範囲が不正です。");
 
-            using Mat cropped = new(mat, new OpenCvSharp.Rect((int)parameters.LeftTop.X, (int)parameters.LeftTop.Y, width, height));
+            using Mat cropped = new(mat, new OpenCvSharp.Rect((int)leftTopX, (int)leftTopY, width, height));
 
             // ファイル名解決
             string pattern = string.IsNullOrEmpty(parameters.FileNamePattern) ? "{FileName}_cropped" : parameters.FileNamePattern;
@@ -1211,12 +1205,35 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
+            string targetDir = Path.GetFullPath(parameters.OutputFolderPath);
+            string targetDirWithSeparator = targetDir.EndsWith(Path.DirectorySeparatorChar.ToString())
+                ? targetDir
+                : targetDir + Path.DirectorySeparatorChar;
+
+            var normalizedInputPaths = parameters.ImagePaths
+                .Select(ip => Path.GetFullPath(ip.Item))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             for (int i = 0; i < parameters.ImagePaths.Count; i++)
             {
                 var originalPath = parameters.ImagePaths[i].Item;
                 var fileName = ResolveOutputFileName(originalPath, pattern, i);
                 var fullPath = Path.Combine(parameters.OutputFolderPath, fileName + parameters.OutputExtension);
-                outputPaths.Add(fullPath);
+                string normalizedOutputPath = Path.GetFullPath(fullPath);
+
+                if (!normalizedOutputPath.StartsWith(targetDirWithSeparator, StringComparison.OrdinalIgnoreCase))
+                {
+                    ShowErrorMessageBox("エラー", $"出力パスが出力フォルダの外部を指しています: {normalizedOutputPath}\nパス走査による不正出力を防ぐため、処理を中断します。");
+                    return false;
+                }
+
+                if (normalizedInputPaths.Contains(normalizedOutputPath))
+                {
+                    ShowErrorMessageBox("エラー", $"出力ファイルが元画像ファイルと重複しています: {normalizedOutputPath}\n元画像の上書きを防ぐため、処理を中断します。");
+                    return false;
+                }
+
+                outputPaths.Add(normalizedOutputPath);
             }
         }
         catch (Exception ex)
@@ -1278,9 +1295,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// 進捗情報を更新する。
     /// </summary>
-    private static void UpdateProgress(ProgressViewModel progressVm, int processedCount, SelectionItem<string> imagePath, ImageProcessResult result, int totalCount)
+    private static async Task UpdateProgressAsync(ProgressViewModel progressVm, int processedCount, SelectionItem<string> imagePath, ImageProcessResult result, int totalCount)
     {
-        Application.Current.Dispatcher.Invoke(() =>
+        await Application.Current.Dispatcher.InvokeAsync(() =>
         {
             progressVm.Current = processedCount;
             progressVm.FileName = Path.GetFileName(imagePath.Item);

@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -39,8 +39,19 @@ public partial class ToggleSwitch : UserControl
     public ToggleSwitch()
     {
         InitializeComponent();
+        Focusable = true;
+        this.KeyDown += ToggleSwitch_KeyDown;
     }
 
+    private void ToggleSwitch_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Space || e.Key == Key.Enter)
+        {
+            if (isAnimating) return;
+            IsChecked = !IsChecked;
+            e.Handled = true;
+        }
+    }
 
     bool isAnimating = false;
     bool isClicking = false;
@@ -69,7 +80,6 @@ public partial class ToggleSwitch : UserControl
         if (d is ToggleSwitch tb)
         {
             tb.PlayToggleAnimation((bool)e.NewValue);
-            tb.PlayColorAnimation((bool)e.NewValue);
             // ルーティングイベント発火
             var args = new RoutedPropertyChangedEventArgs<bool>((bool)e.OldValue, (bool)e.NewValue, IsCheckedChangedEvent);
             tb.RaiseEvent(args);
@@ -86,38 +96,6 @@ public partial class ToggleSwitch : UserControl
 
         isAnimating = true;
         storyboard.Begin();
-    }
-
-    private void PlayColorAnimation(bool toOn)
-    {
-        Color from = toOn ? Colors.Gray : Colors.Cyan;
-        Color to = toOn ? Colors.Cyan : Colors.Gray;
-        var duration = new Duration(TimeSpan.FromMilliseconds(200));
-        ApplyColorAnimation(LeftEllipse, from, to, duration);
-        ApplyColorAnimation(MidRect, from, to, duration);
-        ApplyColorAnimation(RightEllipse, from, to, duration);
-    }
-
-    private void ApplyColorAnimation(Shape shape, Color from, Color to, Duration duration)
-    {
-        if (shape.Fill is SolidColorBrush brush)
-        {
-            // Freeze されている場合があるので新しいブラシに差し替え
-            if (brush.IsFrozen || brush.CanFreeze)
-            {
-                brush = new SolidColorBrush(((SolidColorBrush)shape.Fill).Color);
-                shape.Fill = brush;
-            }
-
-            var animation = new ColorAnimation
-            {
-                From = from,
-                To = to,
-                Duration = duration,
-                FillBehavior = FillBehavior.HoldEnd
-            };
-            brush.BeginAnimation(SolidColorBrush.ColorProperty, animation);
-        }
     }
 
     private void Storyboard_Completed(object? sender, EventArgs e)

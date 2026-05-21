@@ -1,4 +1,4 @@
-﻿<UserControl
+<UserControl
     x:Class="ImageCropper.Views.UserControls.EditableImage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -21,7 +21,6 @@
         <Grid x:Name="ImagePolygonGrid">
             <ScrollViewer
                 Name="scrollViewer"
-                Grid.Column="2"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"
                 HorizontalScrollBarVisibility="Auto"

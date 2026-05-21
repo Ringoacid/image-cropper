@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace ImageCropper.Models;
 
@@ -27,31 +27,31 @@ public class AppSettings
     /// <summary>
     /// 出力画像の拡張子（後方互換性のため）
     /// </summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string OutputExtension
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? OutputExtension
     {
-        get => Output.Extension;
-        set => Output.Extension = value;
+        get => null;
+        set { if (value != null) Output.Extension = value; }
     }
 
     /// <summary>
     /// 出力フォルダパス（後方互換性のため）
     /// </summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string OutputFolderPath
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? OutputFolderPath
     {
-        get => Output.FolderPath;
-        set => Output.FolderPath = value;
+        get => null;
+        set { if (value != null) Output.FolderPath = value; }
     }
 
     /// <summary>
     /// マルチスレッド処理を使用するかどうか（後方互換性のため）
     /// </summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public bool IsUseMultiThreading
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IsUseMultiThreading
     {
-        get => Output.IsUseMultiThreading;
-        set => Output.IsUseMultiThreading = value;
+        get => null;
+        set { if (value.HasValue) Output.IsUseMultiThreading = value.Value; }
     }
 
     #endregion

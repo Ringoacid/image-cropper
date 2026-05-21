@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -80,6 +80,7 @@ public partial class NumberBox : UserControl
     public NumberBox()
     {
         InitializeComponent();
+        DataObject.AddPastingHandler(MainTextBox, OnPaste);
     }
 
     /// <summary>
@@ -109,12 +110,6 @@ public partial class NumberBox : UserControl
     private static void OnRangeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not NumberBox nb) return;
-
-        if (nb.Min > nb.Max)
-        {
-            // 最小値が最大値を超える場合、例外をスロー
-            throw new ArgumentException("Min cannot be greater than Max.");
-        }
 
         nb.SetWarningState(nb.MainTextBox.Text, false);
     }
@@ -151,7 +146,15 @@ public partial class NumberBox : UserControl
     {
         bool isNormal = true;
 
-        if (double.TryParse(text, out double value))
+        if (Min > Max)
+        {
+            isNormal = false;
+        }
+
+        double value = 0.0;
+        bool parseSuccess = double.TryParse(text, out value);
+
+        if (parseSuccess)
         {
             if (value > Max)
             {
@@ -188,12 +191,66 @@ public partial class NumberBox : UserControl
             IsWarning = false;
         }
 
-        if (isChangeValue)
+        if (isChangeValue && parseSuccess)
             Value = value;
 
-        static bool IsValueInteger(double value)
+        static bool IsValueInteger(double val)
         {
-            return value % 1 == 0;
+            return val % 1 == 0;
+        }
+    }
+
+    private void OnPaste(object sender, DataObjectPastingEventArgs e)
+    {
+        if (e.DataObject.GetDataPresent(DataFormats.UnicodeText))
+        {
+            var text = e.DataObject.GetData(DataFormats.UnicodeText) as string;
+            if (!string.IsNullOrEmpty(text))
+            {
+                string currentText = MainTextBox.Text;
+                int selectionStart = MainTextBox.SelectionStart;
+                int selectionLength = MainTextBox.SelectionLength;
+                string newText = currentText.Remove(selectionStart, selectionLength).Insert(selectionStart, text);
+
+                bool isValid = true;
+                foreach (char c in text)
+                {
+                    if (!_allowedChars.Contains(c))
+                    {
+                        isValid = false;
+                        break;
+                    }
+                }
+
+                if (!isValid)
+                {
+                    e.CancelCommand();
+                    return;
+                }
+
+                bool canParse = false;
+                if (IsIntegerOnly)
+                {
+                    canParse = int.TryParse(newText, out _) || newText == "-" || newText == "";
+                }
+                else
+                {
+                    canParse = double.TryParse(newText, out _) || newText == "-" || newText == "." || newText == "-." || newText == "";
+                }
+
+                if (!canParse)
+                {
+                    e.CancelCommand();
+                }
+            }
+            else
+            {
+                e.CancelCommand();
+            }
+        }
+        else
+        {
+            e.CancelCommand();
         }
     }
 }

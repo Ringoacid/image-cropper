@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using System.Collections;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -24,40 +25,126 @@ public class MultiSelectionBehavior
         obj.SetValue(SelectedItemsProperty, value);
     }
 
+    private static readonly DependencyProperty HelperProperty =
+        DependencyProperty.RegisterAttached(
+            "Helper",
+            typeof(MultiSelectionHelper),
+            typeof(MultiSelectionBehavior),
+            new PropertyMetadata(null));
+
     private static void OnSelectedItemsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not ListView listView) return;
 
-        // イベントハンドラの重複登録を避けるために一度解除
-        listView.SelectionChanged -= OnListViewSelectionChanged;
-
-        // 新しいコレクションをビューに反映
-        if (e.NewValue is IList newSelectedItems)
+        var helper = (MultiSelectionHelper)listView.GetValue(HelperProperty);
+        if (helper == null)
         {
-            listView.SelectedItems.Clear();
-            foreach (var item in newSelectedItems)
+            helper = new MultiSelectionHelper(listView);
+            listView.SetValue(HelperProperty, helper);
+        }
+
+        if (e.NewValue == null)
+        {
+            helper.Dispose();
+            listView.ClearValue(HelperProperty);
+        }
+        else
+        {
+            helper.BindCollection(e.NewValue as IList);
+        }
+    }
+
+    private class MultiSelectionHelper
+    {
+        private readonly ListView _listView;
+        private INotifyCollectionChanged? _collection;
+        private bool _isSyncing = false;
+
+        public MultiSelectionHelper(ListView listView)
+        {
+            _listView = listView;
+            _listView.SelectionChanged += OnListViewSelectionChanged;
+            _listView.Unloaded += OnListViewUnloaded;
+        }
+
+        public void BindCollection(IList? collection)
+        {
+            if (_collection != null)
             {
-                listView.SelectedItems.Add(item);
+                _collection.CollectionChanged -= OnCollectionChanged;
+            }
+
+            _collection = collection as INotifyCollectionChanged;
+
+            if (_collection != null)
+            {
+                _collection.CollectionChanged += OnCollectionChanged;
+            }
+
+            SyncListViewToCollection(collection);
+        }
+
+        private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            SyncListViewToCollection(_collection as IList);
+        }
+
+        private void SyncListViewToCollection(IList? collection)
+        {
+            if (_isSyncing) return;
+            _isSyncing = true;
+            try
+            {
+                _listView.SelectedItems.Clear();
+                if (collection != null)
+                {
+                    foreach (var item in collection)
+                    {
+                        _listView.SelectedItems.Add(item);
+                    }
+                }
+            }
+            finally
+            {
+                _isSyncing = false;
             }
         }
 
-        // イベントハンドラを登録
-        listView.SelectionChanged += OnListViewSelectionChanged;
-    }
-
-    private static void OnListViewSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is not ListView listView) return;
-
-        // Viewの変更をViewModelに通知
-        IList viewModelSelectedItems = GetSelectedItems(listView);
-        if (viewModelSelectedItems != null)
+        private void OnListViewSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // ListViewのSelectedItemsを元にViewModelのコレクションを更新
-            viewModelSelectedItems.Clear();
-            foreach (var item in listView.SelectedItems)
+            if (_isSyncing) return;
+            _isSyncing = true;
+            try
             {
-                viewModelSelectedItems.Add(item);
+                IList viewModelSelectedItems = GetSelectedItems(_listView);
+                if (viewModelSelectedItems != null)
+                {
+                    viewModelSelectedItems.Clear();
+                    foreach (var item in _listView.SelectedItems)
+                    {
+                        viewModelSelectedItems.Add(item);
+                    }
+                }
+            }
+            finally
+            {
+                _isSyncing = false;
+            }
+        }
+
+        private void OnListViewUnloaded(object sender, RoutedEventArgs e)
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            _listView.SelectionChanged -= OnListViewSelectionChanged;
+            _listView.Unloaded -= OnListViewUnloaded;
+            if (_collection != null)
+            {
+                _collection.CollectionChanged -= OnCollectionChanged;
+                _collection = null;
             }
         }
     }

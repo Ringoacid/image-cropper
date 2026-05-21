@@ -17,7 +17,6 @@
     mc:Ignorable="d">
 
     <Window.Resources>
-        <converters:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:EnumToDisplayStringConverter x:Key="EnumToDisplayStringConverter" />
 
         <Style x:Key="ChangedHighlightBorder" TargetType="Border">
@@ -61,7 +60,7 @@
                             Height="8"
                             Margin="5,0,0,0"
                             Fill="#00BFFF"
-                            Visibility="{Binding ViewModel.IsAnyOutputSettingChanged, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            Visibility="{Binding ViewModel.IsAnyOutputSettingChanged, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer Padding="10" VerticalScrollBarVisibility="Auto">
@@ -212,7 +211,7 @@
                             Height="8"
                             Margin="5,0,0,0"
                             Fill="#00BFFF"
-                            Visibility="{Binding ViewModel.IsAnyUISettingChanged, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            Visibility="{Binding ViewModel.IsAnyUISettingChanged, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer Padding="10" VerticalScrollBarVisibility="Auto">

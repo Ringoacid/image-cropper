@@ -1,4 +1,7 @@
 using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -11,6 +14,55 @@ namespace ImageCropper.Helpers;
 /// </summary>
 public static class OpenCvWpfHelper
 {
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern uint GetShortPathName(
+        [MarshalAs(UnmanagedType.LPWStr)] string lpszLongPath,
+        [MarshalAs(UnmanagedType.LPWStr)] StringBuilder lpszShortPath,
+        uint cchBuffer);
+
+    /// <summary>
+    /// 指定されたロングパスからショートパス（8.3形式）を取得します。
+    /// </summary>
+    /// <param name="longPath">変換元のロングパス</param>
+    /// <returns>ショートパス。失敗した場合は元のパス</returns>
+    public static string GetShortPath(string longPath)
+    {
+        if (string.IsNullOrEmpty(longPath))
+            return longPath;
+
+        var builder = new StringBuilder(260);
+        uint result = GetShortPathName(longPath, builder, (uint)builder.Capacity);
+        if (result > builder.Capacity)
+        {
+            builder.EnsureCapacity((int)result);
+            result = GetShortPathName(longPath, builder, result);
+        }
+
+        return result > 0 ? builder.ToString() : longPath;
+    }
+
+    /// <summary>
+    /// ファイルパスから画像ファイルをMatとしてロードします。
+    /// ショートパスを使用して読み込みを試み、失敗した場合はバイト配列として読み込んでデコードします。
+    /// </summary>
+    /// <param name="filePath">画像ファイルのパス</param>
+    /// <returns>読み込まれたMatオブジェクト</returns>
+    public static Mat LoadImage(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            throw new ArgumentNullException(nameof(filePath));
+
+        string shortPath = GetShortPath(filePath);
+        Mat mat = Cv2.ImRead(shortPath, ImreadModes.Unchanged);
+        if (mat == null || mat.Empty())
+        {
+            mat?.Dispose();
+            byte[] bytes = File.ReadAllBytes(filePath);
+            mat = Cv2.ImDecode(bytes, ImreadModes.Unchanged);
+        }
+        return mat;
+    }
+
     /// <summary>
     /// OpenCVのMatからWPFのBitmapSourceを生成します。
     /// 浮動小数点や16bitなどのピクセル深度、および1/3/4チャンネル以外のチャンネル数の画像も、
@@ -43,8 +95,11 @@ public static class OpenCvWpfHelper
         }
         else
         {
-            // サポートされていない特殊なチャンネル数の場合はBGRに変換
-            Cv2.CvtColor(tempMat, finalMat, ColorConversionCodes.GRAY2BGR);
+            // サポートされていない特殊なチャンネル数 (e.g. 2 channels) の場合は
+            // チャンネル0を抽出してからGRAY2BGRに変換する
+            using Mat singleChannel = new Mat();
+            Cv2.ExtractChannel(tempMat, singleChannel, 0);
+            Cv2.CvtColor(singleChannel, finalMat, ColorConversionCodes.GRAY2BGR);
         }
 
         // WPFのピクセルフォーマットにマッピング
@@ -62,7 +117,7 @@ public static class OpenCvWpfHelper
         int stride = (int)finalMat.Step();
 
         // BitmapSource.Createを使用してピクセルデータをコピーしてBitmapSourceを生成
-        return BitmapSource.Create(
+        var bitmapSource = BitmapSource.Create(
             finalMat.Width,
             finalMat.Height,
             96, // DPI X
@@ -73,5 +128,7 @@ public static class OpenCvWpfHelper
             stride * finalMat.Height,
             stride
         );
+        bitmapSource.Freeze();
+        return bitmapSource;
     }
 }

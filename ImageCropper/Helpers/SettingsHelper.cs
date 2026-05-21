@@ -1,14 +1,17 @@
-﻿using ImageCropper.Models;
+using ImageCropper.Models;
 using ImageCropper.ViewModels.Windows;
+using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace ImageCropper.Helpers;
 
 public static class SettingsHelper
 {
-    public static string SettingsFilePath = "settings.json";
+    public static string SettingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -34,7 +37,7 @@ public static class SettingsHelper
         }
 
         var json = JsonSerializer.Serialize(settings, JsonOptions);
-        await File.WriteAllTextAsync(SettingsFilePath, json);
+        await File.WriteAllTextAsync(SettingsFilePath, json).ConfigureAwait(false);
     }
 
     public static async Task LoadSettings(MainViewModel vm, bool warnIfNotExist = true)
@@ -46,21 +49,34 @@ public static class SettingsHelper
             return;
         }
 
-        var json = await File.ReadAllTextAsync(SettingsFilePath);
-        var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
-
-        if (settings != null)
+        try
         {
-            vm.OutputSettings.CopyFrom(settings.Output);
-            if (settings.UI != null)
+            var json = await File.ReadAllTextAsync(SettingsFilePath);
+            var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+
+            if (settings != null)
             {
-                vm.UISettings.CopyFrom(settings.UI);
+                if (settings.Output != null)
+                {
+                    vm.OutputSettings.CopyFrom(settings.Output);
+                }
+                if (settings.UI != null)
+                {
+                    vm.UISettings.CopyFrom(settings.UI);
+                }
+                vm.Presets.Clear();
+                if (settings.Presets != null)
+                {
+                    foreach (var preset in settings.Presets)
+                    {
+                        vm.Presets.Add(preset);
+                    }
+                }
             }
-            vm.Presets.Clear();
-            foreach (var preset in settings.Presets)
-            {
-                vm.Presets.Add(preset);
-            }
+        }
+        catch (JsonException ex)
+        {
+            MessageBox.Show($"設定ファイルの形式が正しくありません。\n詳細: {ex.Message}", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -78,7 +94,7 @@ public static class SettingsHelper
         }
 
         var json = JsonSerializer.Serialize(settings, JsonOptions);
-        await File.WriteAllTextAsync(filePath, json);
+        await File.WriteAllTextAsync(filePath, json).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -94,7 +110,15 @@ public static class SettingsHelper
             return null;
         }
 
-        var json = await File.ReadAllTextAsync(filePath);
-        return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+        try
+        {
+            var json = await File.ReadAllTextAsync(filePath);
+            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            MessageBox.Show($"設定ファイルのインポートに失敗しました。形式が正しくありません。\n詳細: {ex.Message}", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return null;
+        }
     }
 }

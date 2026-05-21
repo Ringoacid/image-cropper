@@ -1,4 +1,6 @@
-﻿using System.Windows;
+using System.Threading;
+using System.Windows;
+using System.Windows.Input;
 
 namespace ImageCropper.Views.Windows;
 
@@ -19,11 +21,44 @@ public partial class MessageWindow : Window
         CancellationTokenSource = cancellationTokenSource;
     }
 
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+        if (e.Key == Key.Escape)
+        {
+            CancelAndClose();
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        base.OnClosing(e);
+        TriggerCancellation();
+    }
+
+    private void TriggerCancellation()
+    {
+        if (CancellationTokenSource is not null && !CancellationTokenSource.IsCancellationRequested)
+        {
+            try
+            {
+                CancellationTokenSource.Cancel();
+            }
+            catch (System.ObjectDisposedException)
+            {
+            }
+        }
+    }
+
+    private void CancelAndClose()
+    {
+        TriggerCancellation();
+        this.Close();
+    }
+
     private void Cancel_Button_Click(object sender, RoutedEventArgs e)
     {
-        if (CancellationTokenSource is not null)
-            CancellationTokenSource.Cancel();
-
-        this.Close();
+        CancelAndClose();
     }
 }

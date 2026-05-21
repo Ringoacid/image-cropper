@@ -9,6 +9,10 @@ namespace ImageCropper.Models;
 /// WPF のデータバインディングで使いやすくするために、
 /// <see cref="INotifyCollectionChanged"/> と <see cref="INotifyPropertyChanged"/> を実装しています。
 /// </summary>
+/// <remarks>
+/// このコレクションはスレッドセーフではありません。マルチスレッド環境での競合や
+/// WPFバインディングでの不整合を防ぐため、必ずUIスレッド上でのみ変更(追加・削除など)を行ってください。
+/// </remarks>
 public class ObservableHashSet<T> : ISet<T>, INotifyCollectionChanged, INotifyPropertyChanged
 {
     private readonly HashSet<T> _set;
@@ -122,9 +126,9 @@ public class ObservableHashSet<T> : ISet<T>, INotifyCollectionChanged, INotifyPr
     public void SymmetricExceptWith(IEnumerable<T> other)
     {
         if (other is null) throw new ArgumentNullException(nameof(other));
-        int before = _set.Count;
+        var originalCopy = new HashSet<T>(_set, _set.Comparer);
         _set.SymmetricExceptWith(other);
-        if (_set.Count != before)
+        if (!originalCopy.SetEquals(_set))
         {
             OnPropertyChanged(nameof(Count));
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));

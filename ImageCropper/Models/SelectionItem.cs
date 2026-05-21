@@ -1,9 +1,9 @@
-﻿namespace ImageCropper.Models;
+namespace ImageCropper.Models;
 
 public class SelectionItem<T> : IEquatable<SelectionItem<T>?> where T : IEquatable<T>
 {
-    public T Item { get; set; }
-    public string DisplayName { get; set; }
+    public T Item { get; init; }
+    public string DisplayName { get; init; }
 
     public SelectionItem(T item, string displayName)
     {

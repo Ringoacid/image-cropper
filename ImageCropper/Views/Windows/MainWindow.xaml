@@ -179,7 +179,6 @@
                     <uc:EditableImage
                         x:Name="CropRangeEditableImage"
                         Grid.Row="1"
-                        CreatedRectangle="{Binding ViewModel.CreatedRectangle, Mode=TwoWay}"
                         CropRange="{Binding ViewModel.CropRangePixelCoordinates, Mode=TwoWay}"
                         ImageInformation="{Binding ViewModel.SelectedImageInformation}"
                         ImageSource="{Binding ViewModel.SelectedImage.Item}"

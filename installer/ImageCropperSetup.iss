@@ -19,7 +19,7 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 LicenseFile=..\ImageCropper\LICENSE
-InfoAfterFile=ThirdPartyNotice.txt
+InfoAfterFile=..\ImageCropper\ThirdPartyNotices.md
 OutputDir=output
 OutputBaseFilename=ImageCropperSetup_{#MyAppVersion}
 Compression=lzma2
@@ -71,9 +71,28 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 // .NET 10 ランタイムがインストールされているかチェック
 function IsDotNetInstalled(): Boolean;
 var
+  TmpFile: string;
+  Lines: TArrayOfString;
+  I: Integer;
   ResultCode: Integer;
 begin
-  Result := Exec('dotnet', '--list-runtimes', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+  Result := False;
+  TmpFile := ExpandConstant('{tmp}\dotnet_runtimes.txt');
+  if Exec(ExpandConstant('{cmd}'), '/c dotnet --list-runtimes > "' + TmpFile + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0) then
+  begin
+    if LoadStringsFromFile(TmpFile, Lines) then
+    begin
+      for I := 0 to GetArrayLength(Lines) - 1 do
+      begin
+        if Pos('Microsoft.WindowsDesktop.App 10.', Lines[I]) > 0 then
+        begin
+          Result := True;
+          Break;
+        end;
+      end;
+    end;
+  end;
+  DeleteFile(TmpFile);
 end;
 
 function InitializeSetup(): Boolean;

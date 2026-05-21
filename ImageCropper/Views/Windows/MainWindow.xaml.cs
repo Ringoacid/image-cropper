@@ -1,4 +1,4 @@
-﻿using ImageCropper.ViewModels.Windows;
+using ImageCropper.ViewModels.Windows;
 using System.Windows;
 
 namespace ImageCropper.Views.Windows;
@@ -16,9 +16,6 @@ public partial class MainWindow : Window
         DataContext = this;
 
         InitializeComponent();
-
-        // EditableImageControlをViewModelに設定
-        ViewModel.EditableImageControl = CropRangeEditableImage;
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)

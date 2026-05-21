@@ -33,11 +33,7 @@ public partial class EditableImage : UserControl
             typeof(EditableImage),
             new FrameworkPropertyMetadata(
                 null,
-                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-                OnImageSourceChanged,
-                null,
-                false,
-                UpdateSourceTrigger.LostFocus));
+                OnImageSourceChanged));
 
     /// <summary>
     /// 表示する画像ソース（ファイルパスの文字列、またはImageSourceオブジェクト）
@@ -58,8 +54,7 @@ public partial class EditableImage : UserControl
             {
                 if (System.IO.File.Exists(filePath))
                 {
-                    byte[] data = System.IO.File.ReadAllBytes(filePath);
-                    using var mat = OpenCvSharp.Cv2.ImDecode(data, OpenCvSharp.ImreadModes.Unchanged);
+                    using var mat = ImageCropper.Helpers.OpenCvWpfHelper.LoadImage(filePath);
                     if (!mat.Empty())
                     {
                         control.image.Source = ImageCropper.Helpers.OpenCvWpfHelper.ToBitmapSource(mat);
@@ -67,9 +62,10 @@ public partial class EditableImage : UserControl
                     }
                 }
             }
-            catch
+            catch (System.Exception ex)
             {
                 // 読み込み失敗時はフォールバック
+                MessageBox.Show($"画像の読み込みに失敗しました。\n詳細: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         else if (e.NewValue is ImageSource newImageSource)
@@ -334,6 +330,12 @@ public partial class EditableImage : UserControl
         // 矩形再作成中は処理をスキップ（RecreateRectangleFromCropRangeで既に処理済み）
         if (control.isRecreatingRectangle) return;
 
+        // Clear existing rectangles event handlers before clearing UIElements
+        foreach (var rect in control.UIElements.OfType<Rectangle>())
+        {
+            control.RemoveRectangleEventHandlers(rect);
+        }
+
         control.SetRectangleEventHandlers(newRectangle);
 
         control.UIElements.Clear();
@@ -452,7 +454,15 @@ public partial class EditableImage : UserControl
     /// <summary>
     /// すべての矩形をクリア
     /// </summary>
-    public void ClearRectangles() => UIElements.Clear();
+    public void ClearRectangles()
+    {
+        ClearHandles();
+        foreach (var element in UIElements.OfType<Rectangle>())
+        {
+            RemoveRectangleEventHandlers(element);
+        }
+        UIElements.Clear();
+    }
 
     /// <summary>
     /// 指定した枠線色の矩形をクリア
@@ -466,6 +476,7 @@ public partial class EditableImage : UserControl
         {
             if (element is Rectangle rectangle && rectangle.Stroke == brush)
             {
+                RemoveRectangleEventHandlers(rectangle);
                 UIElements.Remove(rectangle);
             }
         }
@@ -479,6 +490,7 @@ public partial class EditableImage : UserControl
         if (SelectedRectangleIndex >= 0 && SelectedRectangleIndex < UIElements.Count && UIElements[SelectedRectangleIndex] is Rectangle rect)
         {
             ClearHandles();
+            RemoveRectangleEventHandlers(rect);
             UIElements.Remove(rect);
             CreatedRectangle = null;
             CropRange = null;
@@ -531,10 +543,14 @@ public partial class EditableImage : UserControl
             ApplyZoom(mousePosition, newScale, newScale);
 
             // 選択中の矩形のリサイズハンドルを更新
-            if (SelectedRectangleIndex != -1)
+            if (SelectedRectangleIndex != -1 && SelectedRectangleIndex < UIElements.Count)
             {
                 ClearHandles();
-                SetResizeHandles((Rectangle)UIElements[SelectedRectangleIndex]);
+                var rect = UIElements[SelectedRectangleIndex] as Rectangle;
+                if (rect != null)
+                {
+                    SetResizeHandles(rect);
+                }
             }
             e.Handled = true;
         }
@@ -710,6 +726,7 @@ public partial class EditableImage : UserControl
         Rectangle? existingRectangle = UIElements.OfType<Rectangle>().FirstOrDefault();
         if (existingRectangle != null && existingRectangle != creatingRectangle)
         {
+            RemoveRectangleEventHandlers(existingRectangle);
             UIElements.Remove(existingRectangle);
         }
     }
@@ -1344,6 +1361,7 @@ public partial class EditableImage : UserControl
             Tag = index,
         };
 
+        ellipse.MouseDown -= Ellipse_MouseDown;
         ellipse.MouseDown += Ellipse_MouseDown;
         return ellipse;
     }
@@ -1366,7 +1384,10 @@ public partial class EditableImage : UserControl
     private void ClearHandles()
     {
         foreach (Ellipse handle in resizeHandles)
+        {
+            handle.MouseDown -= Ellipse_MouseDown;
             overlayCanvas.Children.Remove(handle);
+        }
         resizeHandles.Clear();
     }
 
@@ -1393,9 +1414,22 @@ public partial class EditableImage : UserControl
     /// </summary>
     private void SetRectangleEventHandlers(Rectangle rectangle)
     {
+        rectangle.MouseLeftButtonDown -= OnRectangleMouseLeftButtonDown;
         rectangle.MouseLeftButtonDown += OnRectangleMouseLeftButtonDown;
+        rectangle.MouseRightButtonDown -= OnRectangleMouseRightButtonDown;
         rectangle.MouseRightButtonDown += OnRectangleMouseRightButtonDown;
+        rectangle.MouseWheel -= Image_MouseWheel;
         rectangle.MouseWheel += Image_MouseWheel;
+    }
+
+    /// <summary>
+    /// 矩形のイベントハンドラを解除
+    /// </summary>
+    private void RemoveRectangleEventHandlers(Rectangle rectangle)
+    {
+        rectangle.MouseLeftButtonDown -= OnRectangleMouseLeftButtonDown;
+        rectangle.MouseRightButtonDown -= OnRectangleMouseRightButtonDown;
+        rectangle.MouseWheel -= Image_MouseWheel;
     }
 
     /// <summary>

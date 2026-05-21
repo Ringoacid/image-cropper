@@ -205,6 +205,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <WrapPanel VerticalAlignment="Center">
@@ -261,6 +262,8 @@
                                 Command="{Binding ViewModel.ApplyPresetCommand}"
                                 Content="適用" />
                         </WrapPanel>
+
+                        <uc:PrefixInputer Grid.Row="3"/>
                     </Grid>
 
                     <Grid Grid.Column="1">

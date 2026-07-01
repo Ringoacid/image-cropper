@@ -87,9 +87,19 @@ public partial class SettingsWindowViewModel : ObservableObject
     public bool IsFileNamePatternChanged => EditingOutputSettings.FileNamePattern != OriginalOutputSettings.FileNamePattern;
 
     /// <summary>
+    /// JPEG品質が変更されたかどうか
+    /// </summary>
+    public bool IsJpegQualityChanged => EditingOutputSettings.JpegQuality != OriginalOutputSettings.JpegQuality;
+
+    /// <summary>
+    /// PNG圧縮レベルが変更されたかどうか
+    /// </summary>
+    public bool IsPngCompressionLevelChanged => EditingOutputSettings.PngCompressionLevel != OriginalOutputSettings.PngCompressionLevel;
+
+    /// <summary>
     /// いずれかの出力設定が変更されたかどうか
     /// </summary>
-    public bool IsAnyOutputSettingChanged => IsOutputExtensionChanged || IsOutputFolderPathChanged || IsUseMultiThreadingChanged || IsCropOutsideImageAllowedChanged || IsFileNamePatternChanged;
+    public bool IsAnyOutputSettingChanged => IsOutputExtensionChanged || IsOutputFolderPathChanged || IsUseMultiThreadingChanged || IsCropOutsideImageAllowedChanged || IsFileNamePatternChanged || IsJpegQualityChanged || IsPngCompressionLevelChanged;
 
     /// <summary>
     /// 表示モードの設定が変更されたかどうか
@@ -144,6 +154,8 @@ public partial class SettingsWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(IsUseMultiThreadingChanged));
         OnPropertyChanged(nameof(IsCropOutsideImageAllowedChanged));
         OnPropertyChanged(nameof(IsFileNamePatternChanged));
+        OnPropertyChanged(nameof(IsJpegQualityChanged));
+        OnPropertyChanged(nameof(IsPngCompressionLevelChanged));
         OnPropertyChanged(nameof(IsAnyOutputSettingChanged));
         OnPropertyChanged(nameof(IsAnySettingChanged));
     }

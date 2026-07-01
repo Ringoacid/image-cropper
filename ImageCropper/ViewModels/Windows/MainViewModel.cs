@@ -994,6 +994,8 @@ public partial class MainViewModel : ObservableObject
             OutputFolderPath = OutputSettings.FolderPath,
             OutputExtension = OutputSettings.Extension,
             FileNamePattern = OutputSettings.FileNamePattern,
+            JpegQuality = OutputSettings.JpegQuality,
+            PngCompressionLevel = OutputSettings.PngCompressionLevel,
             ImagePaths = ImagePaths.ToList()
         };
     }
@@ -1150,7 +1152,8 @@ public partial class MainViewModel : ObservableObject
                 Directory.CreateDirectory(outputDir);
             }
 
-            Cv2.ImEncode(parameters.OutputExtension, cropped, out byte[] outputBytes);
+            var encodeParams = BuildEncodeParams(parameters.OutputExtension, parameters.JpegQuality, parameters.PngCompressionLevel);
+            Cv2.ImEncode(parameters.OutputExtension, cropped, out byte[] outputBytes, encodeParams);
             File.WriteAllBytes(outputFilePath, outputBytes);
 
             return new ImageProcessResult(true);
@@ -1166,6 +1169,30 @@ public partial class MainViewModel : ObservableObject
             var roundedY = Math.Round(point.Y, 2, MidpointRounding.AwayFromZero);
             return $"({roundedX}, {roundedY})";
         }
+    }
+
+    /// <summary>
+    /// 出力拡張子に応じたOpenCVエンコードパラメータを組み立てる。
+    /// </summary>
+    /// <param name="extension">出力拡張子（例: ".jpg"）</param>
+    /// <param name="jpegQuality">JPEG品質（0-100）</param>
+    /// <param name="pngCompressionLevel">PNG圧縮レベル（0-9）</param>
+    /// <returns>Cv2.ImEncodeに渡すエンコードパラメータ</returns>
+    private static ImageEncodingParam[] BuildEncodeParams(string extension, int jpegQuality, int pngCompressionLevel)
+    {
+        if (string.Equals(extension, ".jpg", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".jpe", StringComparison.OrdinalIgnoreCase))
+        {
+            return [new ImageEncodingParam(ImwriteFlags.JpegQuality, Math.Clamp(jpegQuality, 0, 100))];
+        }
+
+        if (string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase))
+        {
+            return [new ImageEncodingParam(ImwriteFlags.PngCompression, Math.Clamp(pngCompressionLevel, 0, 9))];
+        }
+
+        return [];
     }
 
     /// <summary>
@@ -1358,6 +1385,16 @@ public partial class MainViewModel : ObservableObject
         /// 出力ファイル名パターン（プレースホルダーを含む）
         /// </summary>
         public string FileNamePattern { get; init; } = string.Empty;
+
+        /// <summary>
+        /// JPEG出力時の品質（0-100）
+        /// </summary>
+        public int JpegQuality { get; init; } = 90;
+
+        /// <summary>
+        /// PNG出力時の圧縮レベル（0-9）
+        /// </summary>
+        public int PngCompressionLevel { get; init; } = 1;
 
         /// <summary>
         /// 切り抜く画像ファイルのパスのコレクション

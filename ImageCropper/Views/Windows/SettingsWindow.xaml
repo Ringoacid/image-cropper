@@ -198,6 +198,58 @@
                                     IsChecked="{Binding ViewModel.EditingOutputSettings.IsCropOutsideImageAllowed}" />
                             </Grid>
                         </Border>
+
+                        <Border
+                            Margin="0,5"
+                            Padding="5"
+                            CornerRadius="5"
+                            Style="{StaticResource ChangedHighlightBorder}"
+                            Tag="{Binding ViewModel.IsJpegQualityChanged}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Style="{StaticResource SettingLabel}"
+                                    Text="JPEG品質（0-100）：" />
+                                <uc:NumberBox
+                                    Grid.Column="1"
+                                    Width="80"
+                                    HorizontalAlignment="Right"
+                                    IsIntegerOnly="True"
+                                    Max="100"
+                                    Min="0"
+                                    Value="{Binding ViewModel.EditingOutputSettings.JpegQuality}" />
+                            </Grid>
+                        </Border>
+
+                        <Border
+                            Margin="0,5"
+                            Padding="5"
+                            CornerRadius="5"
+                            Style="{StaticResource ChangedHighlightBorder}"
+                            Tag="{Binding ViewModel.IsPngCompressionLevelChanged}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Style="{StaticResource SettingLabel}"
+                                    Text="PNG圧縮レベル（0-9）：" />
+                                <uc:NumberBox
+                                    Grid.Column="1"
+                                    Width="80"
+                                    HorizontalAlignment="Right"
+                                    IsIntegerOnly="True"
+                                    Max="9"
+                                    Min="0"
+                                    Value="{Binding ViewModel.EditingOutputSettings.PngCompressionLevel}" />
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

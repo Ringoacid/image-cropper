@@ -37,6 +37,18 @@ public partial class OutputSettings : ObservableObject
     [ObservableProperty]
     private string fileNamePattern = "{FileName}_cropped";
 
+    /// <summary>
+    /// JPEG出力時の品質（0-100）
+    /// </summary>
+    [ObservableProperty]
+    private int jpegQuality = 90;
+
+    /// <summary>
+    /// PNG出力時の圧縮レベル（0-9）
+    /// </summary>
+    [ObservableProperty]
+    private int pngCompressionLevel = 1;
+
 
     /// <summary>
     /// デフォルト値で初期化された新しいインスタンスを作成する
@@ -56,6 +68,8 @@ public partial class OutputSettings : ObservableObject
         IsUseMultiThreading = other.IsUseMultiThreading;
         IsCropOutsideImageAllowed = other.IsCropOutsideImageAllowed;
         FileNamePattern = other.FileNamePattern;
+        JpegQuality = other.JpegQuality;
+        PngCompressionLevel = other.PngCompressionLevel;
     }
 
     /// <summary>
@@ -69,5 +83,7 @@ public partial class OutputSettings : ObservableObject
         IsUseMultiThreading = other.IsUseMultiThreading;
         IsCropOutsideImageAllowed = other.IsCropOutsideImageAllowed;
         FileNamePattern = other.FileNamePattern;
+        JpegQuality = other.JpegQuality;
+        PngCompressionLevel = other.PngCompressionLevel;
     }
 }

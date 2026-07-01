@@ -45,7 +45,7 @@
             Grid.Row="1"
             Margin="0,5,0,5"
             Padding="5"
-            Background="#88aaaaaa">
+            Background="{DynamicResource ManualSettingsOverlayBrush}">
             <StackPanel Orientation="Vertical">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="画像の解像度：" />

@@ -42,6 +42,12 @@ public partial class UISettings : ObservableObject
     [ObservableProperty]
     private List<string> recentFolders = [];
 
+    /// <summary>
+    /// ダークモードを有効にするかどうか
+    /// </summary>
+    [ObservableProperty]
+    private bool isDarkModeEnabled = false;
+
     public UISettings()
     {
     }
@@ -50,11 +56,13 @@ public partial class UISettings : ObservableObject
     {
         RangeDisplayMode = other.RangeDisplayMode;
         RecentFolders = [.. other.RecentFolders ?? []];
+        IsDarkModeEnabled = other.IsDarkModeEnabled;
     }
 
     public void CopyFrom(UISettings other)
     {
         RangeDisplayMode = other.RangeDisplayMode;
         RecentFolders = [.. other.RecentFolders ?? []];
+        IsDarkModeEnabled = other.IsDarkModeEnabled;
     }
 }

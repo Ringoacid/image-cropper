@@ -54,7 +54,7 @@
                         <Border
                             x:Name="rangeDisplayBorder"
                             Padding="4,2"
-                            Background="#a0000000"
+                            Background="{DynamicResource OverlayBrush}"
                             CornerRadius="2"
                             Visibility="Collapsed">
                             <TextBlock

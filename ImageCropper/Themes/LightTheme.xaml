@@ -1,0 +1,36 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--  ウィンドウ全体  -->
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="White" />
+    <SolidColorBrush x:Key="WindowForegroundBrush" Color="Black" />
+
+    <!--  設定ウィンドウの変更ハイライト  -->
+    <SolidColorBrush x:Key="SettingsUnchangedBackgroundBrush" Color="#F5F5F5" />
+    <SolidColorBrush x:Key="SettingsChangedBackgroundBrush" Color="#E0F7FF" />
+    <SolidColorBrush x:Key="AccentBrush" Color="#00BFFF" />
+    <SolidColorBrush x:Key="ControlBorderBrush" Color="#CCCCCC" />
+
+    <!--  警告表示  -->
+    <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#FFFFAA" />
+
+    <!--  半透明オーバーレイ  -->
+    <SolidColorBrush x:Key="OverlayBrush" Color="#A0000000" />
+    <SolidColorBrush x:Key="ManualSettingsOverlayBrush" Color="#88AAAAAA" />
+
+    <!--  PrefixTextBox（出力ファイル名パターン入力）  -->
+    <SolidColorBrush x:Key="PrefixButtonBackgroundBrush" Color="#F5F7FA" />
+    <SolidColorBrush x:Key="PrefixButtonBorderBrush" Color="#E2E8F0" />
+    <SolidColorBrush x:Key="PrefixButtonHoverBackgroundBrush" Color="#EDF2F7" />
+    <SolidColorBrush x:Key="PrefixButtonHoverBorderBrush" Color="#CBD5E0" />
+    <SolidColorBrush x:Key="PrefixButtonPressedBackgroundBrush" Color="#E2E8F0" />
+    <SolidColorBrush x:Key="PrefixRichTextBoxBackgroundBrush" Color="White" />
+    <SolidColorBrush x:Key="PrefixRichTextBoxBorderBrush" Color="#CBD5E0" />
+    <SolidColorBrush x:Key="PrefixRichTextBoxFocusBorderBrush" Color="#3182CE" />
+    <SolidColorBrush x:Key="PrefixLabelForegroundBrush" Color="#4A5568" />
+    <SolidColorBrush x:Key="FileNameVariableBrush" Color="#3182CE" />
+    <SolidColorBrush x:Key="DateVariableBrush" Color="#38A169" />
+    <SolidColorBrush x:Key="IndexVariableBrush" Color="#DD6B20" />
+
+</ResourceDictionary>

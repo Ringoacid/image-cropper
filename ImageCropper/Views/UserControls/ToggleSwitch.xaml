@@ -11,7 +11,11 @@
     </UserControl.LayoutTransform>
 
     <UserControl.Resources>
-        <!--  ToggleCircle を 5→80 と 80→5 に移動 + 背景シェイプ色 Gray↔Cyan  -->
+        <!--
+            ToggleCircle を 5→80 と 80→5 に移動 + 背景シェイプ色 Gray↔Cyan。
+            WPFのStoryboard/ColorAnimationはDynamicResourceを直接ターゲットにできないため、
+            このコントロールの配色はテーマ（ライト/ダーク）に関わらず固定とする。
+        -->
         <Storyboard x:Key="ToOn">
             <ThicknessAnimation
                 FillBehavior="HoldEnd"

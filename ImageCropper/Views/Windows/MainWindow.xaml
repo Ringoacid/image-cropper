@@ -197,7 +197,7 @@
                     <!--  ViewModel.IsManualSettingsWindowOpenがtrueの時だけ表示  -->
                     <TextBlock
                         Grid.Row="2"
-                        Background="#ffffaa"
+                        Background="{DynamicResource WarningBackgroundBrush}"
                         FontSize="16"
                         Text="手動設定ウィンドウが開いています。矩形の新規作成や削除が制限されています。"
                         Visibility="{Binding ViewModel.IsManualSettingsWindowOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />

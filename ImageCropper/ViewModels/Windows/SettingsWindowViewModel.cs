@@ -107,9 +107,14 @@ public partial class SettingsWindowViewModel : ObservableObject
     public bool IsRangeDisplayModeChanged => EditingUISettings.RangeDisplayMode != OriginalUISettings.RangeDisplayMode;
 
     /// <summary>
+    /// ダークモード設定が変更されたかどうか
+    /// </summary>
+    public bool IsDarkModeEnabledChanged => EditingUISettings.IsDarkModeEnabled != OriginalUISettings.IsDarkModeEnabled;
+
+    /// <summary>
     /// いずれかのUI設定が変更されたかどうか
     /// </summary>
-    public bool IsAnyUISettingChanged => IsRangeDisplayModeChanged;
+    public bool IsAnyUISettingChanged => IsRangeDisplayModeChanged || IsDarkModeEnabledChanged;
 
     /// <summary>
     /// いずれかの設定が変更されたかどうか
@@ -166,6 +171,7 @@ public partial class SettingsWindowViewModel : ObservableObject
     private void OnEditingUISettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         OnPropertyChanged(nameof(IsRangeDisplayModeChanged));
+        OnPropertyChanged(nameof(IsDarkModeEnabledChanged));
         OnPropertyChanged(nameof(IsAnyUISettingChanged));
         OnPropertyChanged(nameof(IsAnySettingChanged));
     }
@@ -306,6 +312,9 @@ public partial class SettingsWindowViewModel : ObservableObject
         // MainViewModelに設定を反映
         ApplyOutputSettingsToMainViewModel(EditingOutputSettings);
         ApplyUISettingsToMainViewModel(EditingUISettings);
+
+        // テーマを即座に反映する
+        ImageCropper.App.ApplyTheme(MainViewModel.UISettings.IsDarkModeEnabled);
 
         // 設定をファイルに保存
         try

@@ -305,6 +305,8 @@ public partial class MainViewModel : ObservableObject
             {
                 RecentFolders.Add(folder);
             }
+
+            ImageCropper.App.ApplyTheme(UISettings.IsDarkModeEnabled);
         }
         catch (Exception ex)
         {

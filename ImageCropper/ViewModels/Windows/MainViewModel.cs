@@ -176,6 +176,11 @@ public partial class MainViewModel : ObservableObject
     private UISettings uISettings = new();
 
     /// <summary>
+    /// 最近使ったフォルダ（UI表示用。永続化はUISettings.RecentFoldersが担う）
+    /// </summary>
+    public ObservableCollection<string> RecentFolders { get; } = [];
+
+    /// <summary>
     /// 画像ファイルパスのコレクション
     /// </summary>
     [ObservableProperty]
@@ -293,6 +298,13 @@ public partial class MainViewModel : ObservableObject
         try
         {
             await SettingsHelper.LoadSettings(this, false);
+
+            // 存在しないフォルダは表示用リストから除外する
+            RecentFolders.Clear();
+            foreach (var folder in UISettings.RecentFolders.Where(Directory.Exists))
+            {
+                RecentFolders.Add(folder);
+            }
         }
         catch (Exception ex)
         {
@@ -308,6 +320,7 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
+            UISettings.RecentFolders = [.. RecentFolders];
             SettingsHelper.SaveSettings(this).GetAwaiter().GetResult();
         }
         catch (Exception ex)
@@ -351,11 +364,72 @@ public partial class MainViewModel : ObservableObject
 
         if (folderDialog.ShowDialog() == true)
         {
-            var files = folderDialog.FolderNames
-                .SelectMany(folder => Directory.GetFiles(folder, "*.*"))
-                .Where(file => SupportedInputImageExtensions.Contains(Path.GetExtension(file).ToLower()));
+            foreach (var folder in folderDialog.FolderNames)
+            {
+                AddRecentFolder(folder);
+            }
 
-            await AddImageFilesAsync(files, "画像追加中");
+            await LoadFolderNonRecursiveAsync(folderDialog.FolderNames);
+        }
+    }
+
+    /// <summary>
+    /// 指定されたフォルダ（複数可）直下の画像ファイルを非再帰的に読み込む。
+    /// </summary>
+    /// <param name="folderPaths">読み込み対象のフォルダパス</param>
+    private async Task LoadFolderNonRecursiveAsync(IEnumerable<string> folderPaths)
+    {
+        var files = folderPaths
+            .SelectMany(folder => Directory.GetFiles(folder, "*.*"))
+            .Where(file => SupportedInputImageExtensions.Contains(Path.GetExtension(file).ToLower()));
+
+        await AddImageFilesAsync(files, "画像追加中");
+    }
+
+    /// <summary>
+    /// 最近使ったフォルダの一覧から選択されたフォルダを開く。
+    /// </summary>
+    /// <param name="path">開くフォルダのパス</param>
+    [RelayCommand]
+    private async Task OnOpenRecentFolder(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            ShowErrorMessageBox("エラー", $"フォルダが見つかりません: {path}");
+            RecentFolders.Remove(path);
+            return;
+        }
+
+        AddRecentFolder(path);
+        await LoadFolderNonRecursiveAsync([path]);
+    }
+
+    /// <summary>
+    /// 最近使ったフォルダの上限件数
+    /// </summary>
+    private const int MaxRecentFolders = 10;
+
+    /// <summary>
+    /// 指定されたフォルダを「最近使ったフォルダ」の先頭に追加する。
+    /// 既存の重複エントリは除去し、上限件数を超えた古い項目は削除する。
+    /// </summary>
+    /// <param name="path">追加するフォルダのパス</param>
+    private void AddRecentFolder(string path)
+    {
+        string normalized = path.TrimEnd('\\', '/');
+
+        var existing = RecentFolders.FirstOrDefault(f =>
+            string.Equals(f.TrimEnd('\\', '/'), normalized, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            RecentFolders.Remove(existing);
+        }
+
+        RecentFolders.Insert(0, path);
+
+        while (RecentFolders.Count > MaxRecentFolders)
+        {
+            RecentFolders.RemoveAt(RecentFolders.Count - 1);
         }
     }
 
@@ -374,6 +448,7 @@ public partial class MainViewModel : ObservableObject
         if (folderDialog.ShowDialog() == true)
         {
             string rootPath = folderDialog.FolderName;
+            AddRecentFolder(rootPath);
 
             try
             {

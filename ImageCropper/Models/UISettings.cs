@@ -36,6 +36,12 @@ public partial class UISettings : ObservableObject
     [ObservableProperty]
     private RangeDisplayMode rangeDisplayMode = RangeDisplayMode.XYWH_Pixel;
 
+    /// <summary>
+    /// 最近使ったフォルダのパス一覧（先頭が最新）
+    /// </summary>
+    [ObservableProperty]
+    private List<string> recentFolders = [];
+
     public UISettings()
     {
     }
@@ -43,10 +49,12 @@ public partial class UISettings : ObservableObject
     public UISettings(UISettings other)
     {
         RangeDisplayMode = other.RangeDisplayMode;
+        RecentFolders = [.. other.RecentFolders ?? []];
     }
 
     public void CopyFrom(UISettings other)
     {
         RangeDisplayMode = other.RangeDisplayMode;
+        RecentFolders = [.. other.RecentFolders ?? []];
     }
 }

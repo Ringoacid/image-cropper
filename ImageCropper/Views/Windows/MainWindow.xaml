@@ -50,6 +50,15 @@
                 <MenuItem Command="{Binding ViewModel.OpenImageClickCommand}" Header="画像を開く" />
                 <MenuItem Command="{Binding ViewModel.OpenFolderClickCommand}" Header="フォルダを開く" />
                 <MenuItem Command="{Binding ViewModel.OpenFolderRecursivelyClickCommand}" Header="再帰的にフォルダを開く" />
+                <MenuItem Header="最近使ったフォルダ" ItemsSource="{Binding ViewModel.RecentFolders}">
+                    <MenuItem.ItemContainerStyle>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Header" Value="{Binding}" />
+                            <Setter Property="Command" Value="{Binding DataContext.ViewModel.OpenRecentFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <Setter Property="CommandParameter" Value="{Binding}" />
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+                </MenuItem>
                 <Separator />
                 <MenuItem Command="{Binding ViewModel.SetOutputFolderClickCommand}" Header="出力先フォルダを選択" />
                 <MenuItem Command="{Binding ViewModel.CropImageCommand}" Header="画像切り取り" />

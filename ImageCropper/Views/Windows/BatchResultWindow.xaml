@@ -1,0 +1,58 @@
+<Window
+    x:Class="ImageCropper.Views.Windows.BatchResultWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:ImageCropper.Views.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="処理結果"
+    Width="480"
+    Height="360"
+    d:DataContext="{d:DesignInstance Type=local:BatchResultWindow}"
+    WindowStartupLocation="CenterOwner"
+    mc:Ignorable="d">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Grid.Row="0"
+            FontSize="16"
+            FontWeight="Bold"
+            Text="{Binding ViewModel.SummaryText}" />
+
+        <TextBlock
+            Grid.Row="1"
+            Margin="0,10,0,0"
+            FontWeight="SemiBold"
+            Text="失敗したファイル："
+            Visibility="{Binding ViewModel.HasFailures, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+        <ListView
+            Grid.Row="2"
+            Margin="0,5,0,0"
+            ItemsSource="{Binding ViewModel.FailedItems}"
+            Visibility="{Binding ViewModel.HasFailures, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Width="180" DisplayMemberBinding="{Binding FileName}" Header="ファイル名" />
+                    <GridViewColumn Width="240" DisplayMemberBinding="{Binding ErrorMessage}" Header="エラー内容" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <Button
+            Grid.Row="3"
+            Width="100"
+            Margin="0,10,0,0"
+            HorizontalAlignment="Center"
+            Click="Close_Button_Click"
+            Content="閉じる"
+            IsCancel="True"
+            IsDefault="True" />
+    </Grid>
+</Window>

@@ -905,33 +905,16 @@ public partial class MainViewModel : ObservableObject
 
         string messageBoxTitle = "処理完了";
         string messageBoxText = string.Empty;
+        ConcurrentBag<BatchResultItem>? results = null;
+        bool completedNormally = false;
 
         try
         {
-            var errors = await ProcessImagesAsync(cropParameters, progressVm, _cancellationTokenSource.Token);
+            results = await ProcessImagesAsync(cropParameters, progressVm, _cancellationTokenSource.Token);
 
-            // エラーがあった場合は最後にまとめて表示
-            if (errors.IsEmpty)
-            {
-                progressVm.Message = "完了";
-
-                messageBoxTitle = "処理完了";
-                messageBoxText = "すべての画像の切り抜きが正常に完了しました。";
-            }
-            else
-            {
-                var errorSummary = $"切り抜きは完了しましたが、以下のファイルで処理エラーが発生しました:\n{string.Join("\n", errors.Take(5))}";
-                if (errors.Count > 5)
-                {
-                    errorSummary += $"\n...他 {errors.Count - 5} 件のエラー";
-                }
-
-                progressVm.Message = errorSummary;
-
-                messageBoxTitle = "処理完了（エラーあり）";
-                messageBoxText = errorSummary;
-            }
+            progressVm.Message = "完了";
             progressVm.Progress = 100;
+            completedNormally = true;
         }
         catch (OperationCanceledException)
         {
@@ -954,7 +937,21 @@ public partial class MainViewModel : ObservableObject
             _cancellationTokenSource = null;
         }
 
-        ShowInformationMessageBox(messageBoxTitle, messageBoxText);
+        if (completedNormally && results is not null)
+        {
+            var successCount = results.Count(r => r.Success);
+            var failedItems = results.Where(r => !r.Success).OrderBy(r => r.FileName);
+
+            var resultWindow = new BatchResultWindow(new BatchResultWindowViewModel(results.Count, successCount, failedItems))
+            {
+                Owner = Application.Current.MainWindow
+            };
+            resultWindow.ShowDialog();
+        }
+        else
+        {
+            ShowInformationMessageBox(messageBoxTitle, messageBoxText);
+        }
     }
 
     /// <summary>
@@ -1129,14 +1126,11 @@ public partial class MainViewModel : ObservableObject
     /// <param name="parameters">切り抜きパラメータ</param>
     /// <param name="progressVm">進捗ViewModel</param>
     /// <param name="cancellationToken">キャンセルトークン</param>
-    /// <returns>エラーが発生したファイル名のリスト</returns>
-    /// <summary>
-    /// 画像の切り抜き処理を非同期で実行する。
-    /// </summary>
-    private async Task<ConcurrentBag<string>> ProcessImagesAsync(CropParameters parameters, ProgressViewModel progressVm, CancellationToken cancellationToken)
+    /// <returns>各ファイルの処理結果（成功・失敗の両方を含む）</returns>
+    private async Task<ConcurrentBag<BatchResultItem>> ProcessImagesAsync(CropParameters parameters, ProgressViewModel progressVm, CancellationToken cancellationToken)
     {
         var processedCount = 0;
-        var errors = new ConcurrentBag<string>();
+        var results = new ConcurrentBag<BatchResultItem>();
         bool isParallel = OutputSettings.IsUseMultiThreading;
 
         var parallelOptions = new ParallelOptions
@@ -1155,15 +1149,12 @@ public partial class MainViewModel : ObservableObject
 
             var currentCount = Interlocked.Increment(ref processedCount);
 
-            if (!result.Success)
-            {
-                errors.Add($"{Path.GetFileName(pair.item.Item)}: {result.ErrorMessage}");
-            }
+            results.Add(new BatchResultItem(Path.GetFileName(pair.item.Item), result.Success, result.ErrorMessage));
 
             await UpdateProgressAsync(progressVm, currentCount, pair.item, result, parameters.ImagePaths.Count);
         });
 
-        return errors;
+        return results;
     }
 
     /// <summary>

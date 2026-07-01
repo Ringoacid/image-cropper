@@ -10,11 +10,48 @@ public record ImageInformation
     public int Height { get; private set; }
     public int Channels { get; private set; }
 
+    /// <summary>
+    /// EXIFのOrientationタグの値（1が既定・無回転。取得できない場合も1）
+    /// </summary>
+    public int ExifOrientation { get; private set; } = 1;
+
     [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
     private static extern uint GetShortPathName(
         string lpszLongPath,
         System.Text.StringBuilder lpszShortPath,
         uint cchBuffer);
+
+    /// <summary>
+    /// BitmapMetadataからEXIF Orientationタグ（ID 274）を読み取る。
+    /// コーデックによってはクエリパスが異なる、または対応していない場合があるため、
+    /// 取得できない場合は既定値（1: 無回転）を返す。
+    /// </summary>
+    private static int ReadExifOrientation(BitmapMetadata? metadata)
+    {
+        if (metadata is null)
+            return 1;
+
+        foreach (var query in new[] { "/app1/ifd/exif/{ushort=274}", "/app1/ifd/{ushort=274}" })
+        {
+            try
+            {
+                if (metadata.GetQuery(query) is { } value)
+                {
+                    int orientation = Convert.ToInt32(value);
+                    if (orientation is >= 1 and <= 8)
+                    {
+                        return orientation;
+                    }
+                }
+            }
+            catch
+            {
+                // このクエリパスに対応していない、またはメタデータが存在しない場合は無視
+            }
+        }
+
+        return 1;
+    }
 
     private static string GetShortPath(string longPath)
     {
@@ -69,6 +106,8 @@ public record ImageInformation
                     32 => 4,
                     _ => Math.Max(1, bitsPerPixel / 8)
                 };
+
+                ExifOrientation = ReadExifOrientation(frame.Metadata as BitmapMetadata);
                 return;
             }
         }

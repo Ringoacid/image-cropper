@@ -64,6 +64,38 @@ public static class OpenCvWpfHelper
     }
 
     /// <summary>
+    /// EXIFのOrientation値に基づいてMatを回転します。
+    /// 90/180/270度回転（値3, 6, 8）のみに対応し、それ以外（ミラー系や無回転）は複製のみ行います。
+    /// </summary>
+    /// <param name="mat">回転元のMat</param>
+    /// <param name="exifOrientation">EXIF Orientation値</param>
+    /// <returns>回転後の新しいMat（呼び出し側で破棄すること）</returns>
+    public static Mat ApplyExifRotation(Mat mat, int exifOrientation)
+    {
+        if (mat == null)
+            throw new ArgumentNullException(nameof(mat));
+
+        var rotated = new Mat();
+        switch (exifOrientation)
+        {
+            case 3:
+                Cv2.Rotate(mat, rotated, RotateFlags.Rotate180);
+                break;
+            case 6:
+                Cv2.Rotate(mat, rotated, RotateFlags.Rotate90Clockwise);
+                break;
+            case 8:
+                Cv2.Rotate(mat, rotated, RotateFlags.Rotate90Counterclockwise);
+                break;
+            default:
+                // ミラー系（2,4,5,7）および無回転（1）は非対応のため複製のみ
+                mat.CopyTo(rotated);
+                break;
+        }
+        return rotated;
+    }
+
+    /// <summary>
     /// OpenCVのMatからWPFのBitmapSourceを生成します。
     /// 浮動小数点や16bitなどのピクセル深度、および1/3/4チャンネル以外のチャンネル数の画像も、
     /// WPFで表示可能な8bit（Gray8, Bgr24, Bgra32）に自動で正規化・変換してコピーします。

@@ -57,7 +57,19 @@ public partial class EditableImage : UserControl
                     using var mat = ImageCropper.Helpers.OpenCvWpfHelper.LoadImage(filePath);
                     if (!mat.Empty())
                     {
-                        control.image.Source = ImageCropper.Helpers.OpenCvWpfHelper.ToBitmapSource(mat);
+                        // プレビュー表示のみEXIFのOrientationに合わせて回転する。
+                        // 切り抜き座標系（元画像の生ピクセル座標）は変更しない。
+                        int exifOrientation = 1;
+                        try
+                        {
+                            exifOrientation = new ImageInformation(filePath).ExifOrientation;
+                        }
+                        catch
+                        {
+                            // EXIF情報の取得に失敗しても、画像自体は読み込めているためプレビュー表示は継続する
+                        }
+                        using var rotatedMat = ImageCropper.Helpers.OpenCvWpfHelper.ApplyExifRotation(mat, exifOrientation);
+                        control.image.Source = ImageCropper.Helpers.OpenCvWpfHelper.ToBitmapSource(rotatedMat);
                         return;
                     }
                 }
